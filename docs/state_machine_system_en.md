@@ -118,3 +118,141 @@ state_machine.handle_event("damage_taken", [30])
    - Use state machine signals for debugging
    - Monitor state transitions and event propagation
    - Check variable changes
+
+# State Machine System
+
+The State Machine System provides a robust and flexible way to manage game states and transitions. It's designed to handle complex game logic while maintaining code clarity and maintainability.
+
+## Features
+
+- 🔄 **Hierarchical State Machines**: Support for nested state machines
+- 🎮 **Game-Specific States**: Built-in support for common game states (Menu, Gameplay, Pause)
+- 📊 **State Management**: Clean API for state transitions and updates
+- 🎯 **Input Handling**: Integrated input processing per state
+- 🔍 **Debugging**: Built-in debugging features for state tracking
+
+## Core Components
+
+### BaseState
+
+The foundation class for all states. Provides:
+- State lifecycle methods (enter, exit, update)
+- Input handling
+- State transition management
+
+```gdscript
+class MyState extends BaseState:
+    func _enter(msg := {}) -> void:
+        # Called when entering the state
+        pass
+        
+    func _exit() -> void:
+        # Called when exiting the state
+        pass
+        
+    func _update(delta: float) -> void:
+        # Called every frame
+        pass
+        
+    func _handle_input(event: InputEvent) -> void:
+        # Handle input events
+        pass
+```
+
+### BaseStateMachine
+
+Manages a collection of states and their transitions:
+- State registration and switching
+- State updates and input propagation
+- Support for hierarchical state machines
+
+```gdscript
+class MyStateMachine extends BaseStateMachine:
+    func _ready() -> void:
+        # Register states
+        add_state("idle", IdleState.new(self))
+        add_state("walk", WalkState.new(self))
+        
+        # Set initial state
+        start("idle")
+```
+
+### StateMachineManager
+
+Global manager for all state machines in your game:
+- Central registration of state machines
+- Global state machine updates
+- Debug information and monitoring
+
+```gdscript
+# Access the manager through CoreSystem
+CoreSystem.state_machine_manager.register_state_machine("player", player_state_machine)
+```
+
+## Usage Example
+
+Here's a simple example of a character state machine:
+
+```gdscript
+# Character state machine
+class CharacterStateMachine extends BaseStateMachine:
+    func _ready() -> void:
+        add_state("idle", IdleState.new(self))
+        add_state("walk", WalkState.new(self))
+        add_state("jump", JumpState.new(self))
+        start("idle")
+
+# Idle state
+class IdleState extends BaseState:
+    func _enter(msg := {}) -> void:
+        owner.play_animation("idle")
+    
+    func _handle_input(event: InputEvent) -> void:
+        if event.is_action_pressed("move"):
+            switch_to("walk")
+        elif event.is_action_pressed("jump"):
+            switch_to("jump")
+
+# Register with manager
+func _ready() -> void:
+    var character_sm = CharacterStateMachine.new(self)
+    CoreSystem.state_machine_manager.register_state_machine("character", character_sm)
+```
+
+## Best Practices
+
+1. **State Organization**
+   - Keep states small and focused
+   - Use hierarchical state machines for complex behaviors
+   - Consider using state factories for dynamic state creation
+
+2. **State Transitions**
+   - Use message passing for state communication
+   - Validate state transitions
+   - Handle cleanup in _exit()
+
+3. **Debugging**
+   - Enable debug logging for state transitions
+   - Use the built-in state monitoring tools
+   - Add state validation checks
+
+## API Reference
+
+### BaseState
+- `enter(msg: Dictionary)`: Enter the state
+- `exit()`: Exit the state
+- `update(delta: float)`: Update state logic
+- `handle_input(event: InputEvent)`: Process input
+- `switch_to(state_name: String, msg: Dictionary = {})`: Switch to another state
+
+### BaseStateMachine
+- `add_state(name: String, state: BaseState)`: Register a new state
+- `remove_state(name: String)`: Remove a registered state
+- `start(initial_state: String)`: Start the state machine
+- `stop()`: Stop the state machine
+- `switch_to(state_name: String, msg: Dictionary = {})`: Switch to a state
+
+### StateMachineManager
+- `register_state_machine(name: String, state_machine: BaseStateMachine)`: Register a state machine
+- `unregister_state_machine(name: String)`: Unregister a state machine
+- `get_state_machine(name: String) -> BaseStateMachine`: Get a registered state machine

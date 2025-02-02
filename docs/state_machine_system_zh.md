@@ -118,3 +118,141 @@ state_machine.handle_event("damage_taken", [30])
    - 使用状态机提供的信号进行调试
    - 监控状态切换和事件传播
    - 检查变量的变化
+
+## 状态机系统
+
+状态机系统提供了一种强大而灵活的方式来管理游戏状态和转换。它旨在处理复杂的游戏逻辑，同时保持代码的清晰性和可维护性。
+
+### 特性
+
+- 🔄 **层级状态机**：支持嵌套状态机
+- 🎮 **游戏专用状态**：内置支持常见游戏状态（菜单、游戏、暂停）
+- 📊 **状态管理**：清晰的状态转换和更新 API
+- 🎯 **输入处理**：每个状态集成的输入处理
+- 🔍 **调试功能**：内置状态跟踪调试功能
+
+### 核心组件
+
+#### BaseState（基础状态）
+
+所有状态的基础类。提供：
+- 状态生命周期方法（进入、退出、更新）
+- 输入处理
+- 状态转换管理
+
+```gdscript
+class MyState extends BaseState:
+    func _enter(msg := {}) -> void:
+        # 进入状态时调用
+        pass
+        
+    func _exit() -> void:
+        # 退出状态时调用
+        pass
+        
+    func _update(delta: float) -> void:
+        # 每帧调用
+        pass
+        
+    func _handle_input(event: InputEvent) -> void:
+        # 处理输入事件
+        pass
+```
+
+#### BaseStateMachine（基础状态机）
+
+管理状态集合及其转换：
+- 状态注册和切换
+- 状态更新和输入传播
+- 支持层级状态机
+
+```gdscript
+class MyStateMachine extends BaseStateMachine:
+    func _ready() -> void:
+        # 注册状态
+        add_state("idle", IdleState.new(self))
+        add_state("walk", WalkState.new(self))
+        
+        # 设置初始状态
+        start("idle")
+```
+
+#### StateMachineManager（状态机管理器）
+
+游戏中所有状态机的全局管理器：
+- 状态机的中央注册
+- 全局状态机更新
+- 调试信息和监控
+
+```gdscript
+# 通过 CoreSystem 访问管理器
+CoreSystem.state_machine_manager.register_state_machine("player", player_state_machine)
+```
+
+## 使用示例
+
+这是一个简单的角色状态机示例：
+
+```gdscript
+# 角色状态机
+class CharacterStateMachine extends BaseStateMachine:
+    func _ready() -> void:
+        add_state("idle", IdleState.new(self))
+        add_state("walk", WalkState.new(self))
+        add_state("jump", JumpState.new(self))
+        start("idle")
+
+# 空闲状态
+class IdleState extends BaseState:
+    func _enter(msg := {}) -> void:
+        owner.play_animation("idle")
+    
+    func _handle_input(event: InputEvent) -> void:
+        if event.is_action_pressed("move"):
+            switch_to("walk")
+        elif event.is_action_pressed("jump"):
+            switch_to("jump")
+
+# 注册到管理器
+func _ready() -> void:
+    var character_sm = CharacterStateMachine.new(self)
+    CoreSystem.state_machine_manager.register_state_machine("character", character_sm)
+```
+
+## 最佳实践
+
+1. **状态组织**
+   - 保持状态小而专注
+   - 对复杂行为使用层级状态机
+   - 考虑使用状态工厂进行动态状态创建
+
+2. **状态转换**
+   - 使用消息传递进行状态通信
+   - 验证状态转换
+   - 在 _exit() 中处理清理工作
+
+3. **调试**
+   - 启用状态转换的调试日志
+   - 使用内置的状态监控工具
+   - 添加状态验证检查
+
+## API 参考
+
+### BaseState（基础状态）
+- `enter(msg: Dictionary)`: 进入状态
+- `exit()`: 退出状态
+- `update(delta: float)`: 更新状态逻辑
+- `handle_input(event: InputEvent)`: 处理输入
+- `switch_to(state_name: String, msg: Dictionary = {})`: 切换到另一个状态
+
+### BaseStateMachine（基础状态机）
+- `add_state(name: String, state: BaseState)`: 注册新状态
+- `remove_state(name: String)`: 移除已注册的状态
+- `start(initial_state: String)`: 启动状态机
+- `stop()`: 停止状态机
+- `switch_to(state_name: String, msg: Dictionary = {})`: 切换到指定状态
+
+### StateMachineManager（状态机管理器）
+- `register_state_machine(name: String, state_machine: BaseStateMachine)`: 注册状态机
+- `unregister_state_machine(name: String)`: 注销状态机
+- `get_state_machine(name: String) -> BaseStateMachine`: 获取已注册的状态机
