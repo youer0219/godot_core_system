@@ -47,7 +47,7 @@ var _io_manager: AsyncIOManager
 ## 自动存档计时器
 var _auto_save_timer: float = 0
 
-func _init():
+func _init(_data: Dictionary = {}):
 	_current_save = null
 	_io_manager = AsyncIOManager.new()
 

@@ -2,18 +2,18 @@ extends "res://addons/godot_core_system/source/manager_base.gd"
 
 ## 音频类型枚举
 enum AudioType {
-	MUSIC,
-	SOUND_EFFECT,
-	VOICE,
-	AMBIENT
+	MUSIC,				## 背景音乐
+	SOUND_EFFECT,		## 音效
+	VOICE,				## 语音
+	AMBIENT,			## 环境音
 }
 
 ## 音频通道配置
 const DEFAULT_BUSES = {
-	AudioType.MUSIC: "Music",
-	AudioType.SOUND_EFFECT: "SFX",
-	AudioType.VOICE: "Voice",
-	AudioType.AMBIENT: "Ambient"
+	AudioType.MUSIC: "Music",			## 背景音乐通道
+	AudioType.SOUND_EFFECT: "SFX",		## 音效通道
+	AudioType.VOICE: "Voice",			## 语音通道
+	AudioType.AMBIENT: "Ambient",		## 环境音通道
 }
 
 ## 音频节点根节点
@@ -28,8 +28,9 @@ var _audio_cache: Dictionary = {}
 ## 音量设置
 var _volumes: Dictionary = {}
 
-func _init(node_root: Node = null):
-	audio_node_root = node_root
+func _init(data : Dictionary = {}):
+	# 设置默认值
+	audio_node_root = data.get("audio_node_root", null)
 	_setup_audio_buses()
 	
 	for type in AudioType.values():

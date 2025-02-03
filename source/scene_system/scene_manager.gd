@@ -32,7 +32,7 @@ var _transition_layer: CanvasLayer
 ## 转场矩形
 var _transition_rect: ColorRect
 
-func _init():
+func _init(data: Dictionary = {}):
 	_setup_transition_layer()
 
 ## 预加载场景

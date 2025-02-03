@@ -34,7 +34,7 @@ var _io_manager: AsyncIOManager
 ## 是否已修改
 var _modified: bool = false
 
-func _init():
+func _init(_data: Dictionary = {}):
 	_io_manager = AsyncIOManager.new()
 	_config = DefaultConfig.get_default_config()
 

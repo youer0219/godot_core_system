@@ -36,7 +36,7 @@ var _running: bool = true
 ## 互斥锁
 var _mutex: Mutex
 
-func _init():
+func _init(_data:Dictionary = {}):
 	_semaphore = Semaphore.new()
 	_mutex = Mutex.new()
 	_thread = Thread.new()

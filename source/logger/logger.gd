@@ -33,7 +33,8 @@ var _log_file: FileAccess = null
 ## 控制台接口
 var _console: ConsoleInterface = null
 
-func _init():
+func _init(data: Dictionary = {}) -> void:
+	_console = data.get("console_adapter", null)
 	_setup_file_logging()
 
 ## 设置控制台

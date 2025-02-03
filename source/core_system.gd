@@ -22,10 +22,7 @@ const PankuConsoleAdapter = preload("res://addons/godot_core_system/source/logge
 ## 音频管理器
 var audio_manager : AudioManager:
 	get:
-		if audio_manager == null:
-			audio_manager = get_module("audio_manager") as AudioManager
-			audio_manager.audio_node_root = self
-		return audio_manager
+		return get_module("audio_manager", {"audio_node_root": self})
 	set(value):
 		push_error("audio_manager is read-only")
 ## 事件总线
@@ -43,10 +40,7 @@ var input_manager : InputManager:
 ## Logger
 var logger : Logger:
 	get:
-		if logger == null:
-			logger = get_module("logger")
-			logger.set_console(PankuConsoleAdapter.new())
-		return logger
+		return get_module("logger", {"console_adapter": PankuConsoleAdapter.new()})
 	set(value):
 		push_error("logger is read-only")
 ## 资源管理器
@@ -121,10 +115,11 @@ func set_console(console: ConsoleInterface) -> void:
 	logger.set_console(console)
 
 ## 获取模块
-func get_module(module_id: StringName) -> RefCounted:
+func get_module(module_id: StringName, data : Dictionary = {}) -> ManagerBase:
 	if not _modules.has(module_id):
 		if is_module_enabled(module_id):
-			_modules[module_id] = _create_module(module_id)
+			var module : ManagerBase = _create_module(module_id, data)
+			_modules[module_id] = module
 		else:
 			push_error("模块未启用：" + module_id)
 			return null
@@ -139,13 +134,13 @@ func is_module_enabled(module_id: StringName) -> bool:
 	return ProjectSettings.get_setting(setting_name, true)
 
 ## 创建模块实例
-func _create_module(module_id: StringName) -> RefCounted:	
+func _create_module(module_id: StringName, data: Dictionary = {}) -> ManagerBase:	
 	var script = _module_scripts[module_id]
 	if not script:
 		push_error("无法加载模块脚本：" + module_id)
 		return null
 	
-	var module = script.new()
+	var module = script.new(data)
 	if not module:
 		push_error("无法创建模块实例：" + module_id)
 		return null

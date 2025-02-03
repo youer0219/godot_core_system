@@ -1,5 +1,8 @@
 extends RefCounted
 
+func _init(_data: Dictionary = {}) -> void:
+	pass
+
 ## 初始化
 func _ready() -> void:
 	pass
