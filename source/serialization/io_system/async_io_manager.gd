@@ -183,11 +183,20 @@ func _handle_read_task(task: IOTask) -> void:
 	
 	# 解密
 	if task.encryption and task.encryption_key != "":
-		content = content.decrypt(task.encryption_key)
+		var crypto := Crypto.new()
+		var key :PackedByteArray = crypto.generate_random_bytes(32)  # 使用SHA-256生成密钥
+		var iv :PackedByteArray = crypto.generate_random_bytes(16)   # 使用AES-256-CBC的IV
+		var aes := AESContext.new()
+		aes.start(AESContext.Mode.MODE_CBC_DECRYPT, key, iv)
+		# 先将Base64编码的字符串转换回二进制数据
+		var encrypted_bytes := Marshalls.base64_to_raw(content)
+		var decrypted_bytes := aes.update(encrypted_bytes)
+		content = decrypted_bytes.get_string_from_utf8()
 	
 	# 解压
 	if task.compression:
-		content = content.decompress()
+		var compressed_bytes = content.to_utf8_buffer()
+		content = compressed_bytes.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP).get_string_from_utf8()
 	
 	# 解析JSON
 	var parse_result = JSON.parse_string(content)
@@ -208,15 +217,23 @@ func _handle_write_task(task: IOTask) -> void:
 		call_deferred("_complete_task", task, false, null, "Failed to open file")
 		return
 	
-	var content = JSON.stringify(task.data)
+	var content : String = JSON.stringify(task.data)
 	
 	# 压缩
 	if task.compression:
-		content = content.compress()
+		var bytes = content.to_utf8_buffer()
+		content = bytes.compress(FileAccess.COMPRESSION_GZIP).get_string_from_utf8()
 	
 	# 加密
 	if task.encryption and task.encryption_key != "":
-		content = content.encrypt(task.encryption_key)
+		var crypto := Crypto.new()
+		var key := crypto.generate_random_bytes(32)  # 使用SHA-256生成密钥
+		var iv := crypto.generate_random_bytes(16)   # 使用AES-256-CBC的IV
+		var aes := AESContext.new()
+		aes.start(AESContext.Mode.MODE_CBC_ENCRYPT, key, iv)
+		# 将加密后的二进制数据转换为Base64编码的字符串
+		var encrypted_bytes := aes.update(content.to_utf8_buffer())
+		content = Marshalls.raw_to_base64(encrypted_bytes)
 	
 	file.store_string(content)
 	file.close()
