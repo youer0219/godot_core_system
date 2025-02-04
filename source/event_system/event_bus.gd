@@ -2,27 +2,10 @@ extends "res://addons/godot_core_system/source/manager_base.gd"
 
 ## 事件优先级枚举
 enum Priority {
-	LOW = 0,
-	NORMAL = 1,
-	HIGH = 2,
+	LOW = 0,			## 低优先级
+	NORMAL = 1,		## 普通优先级
+	HIGH = 2,		## 高优先级
 }
-
-## 事件订阅信息
-class Subscription:
-	## 回调函数
-	var callback: Callable
-	## 优先级
-	var priority: Priority
-	## 是否只触发一次
-	var once: bool
-	## 过滤器
-	var filter: Callable
-	
-	func _init(cb: Callable, p: Priority, o: bool, f: Callable = func(_p): return true) -> void:
-		callback = cb
-		priority = p
-		once = o
-		filter = f
 
 ## 事件订阅字典 {事件名: [Subscription]}
 var _subscriptions: Dictionary = {}
@@ -41,6 +24,9 @@ signal event_pushed(event_name: String, payload: Array)
 signal event_handled(event_name: String, payload: Array)
 
 ## 推送事件
+## [param event_name] 事件名
+## [param payload] 事件负载
+## [param immediate] 是否立即触发事件
 func push_event(event_name: String, payload = null, immediate: bool = true) -> void:
 	if not payload is Array:
 		payload = [payload]
@@ -83,6 +69,11 @@ func push_event(event_name: String, payload = null, immediate: bool = true) -> v
 	event_handled.emit(event_name, payload)
 
 ## 订阅事件
+## [param event_name] 事件名
+## [param callback] 回调函数
+## [param priority] 优先级
+## [param once] 是否只执行一次
+## [param filter] 过滤器
 func subscribe(
 	event_name: String, 
 	callback: Callable, 
@@ -98,6 +89,8 @@ func subscribe(
 		if sub.callback == callback:
 			if debug_mode:
 				print("[EventBus] Callback already subscribed to event: %s" % event_name)
+			else:
+				push_warning("Callback already subscribed to event: %s" % event_name)
 			return
 	
 	var subscription = Subscription.new(callback, priority, once, filter)
@@ -107,6 +100,8 @@ func subscribe(
 		print("[EventBus] Subscribed to event: %s with priority: %s" % [event_name, priority])
 
 ## 取消订阅事件
+## [param event_name] 事件名
+## [param callback] 回调函数
 func unsubscribe(event_name: String, callback: Callable) -> void:
 	if not _subscriptions.has(event_name):
 		return
@@ -123,6 +118,10 @@ func unsubscribe(event_name: String, callback: Callable) -> void:
 			print("[EventBus] Unsubscribed from event: %s" % event_name)
 
 ## 订阅一次性事件
+## [param event_name] 事件名
+## [param callback] 回调函数
+## [param priority] 优先级
+## [param filter] 过滤器
 func subscribe_once(
 	event_name: String, 
 	callback: Callable, 
@@ -132,6 +131,7 @@ func subscribe_once(
 	subscribe(event_name, callback, priority, true, filter)
 
 ## 取消订阅所有事件
+## [param callback] 回调函数
 func unsubscribe_all(callback: Callable) -> void:
 	for event_name in _subscriptions:
 		unsubscribe(event_name, callback)
@@ -143,12 +143,14 @@ func clear_subscriptions() -> void:
 		print("[EventBus] All subscriptions cleared")
 
 ## 获取事件订阅者数量
+## [param event_name] 事件名
 func get_subscriber_count(event_name: String) -> int:
 	if not _subscriptions.has(event_name):
 		return 0
 	return _subscriptions[event_name].size()
 
 ## 获取事件历史记录
+## [return] 事件历史记录
 func get_event_history() -> Array[Dictionary]:
 	return _event_history.duplicate()
 
@@ -157,6 +159,8 @@ func clear_event_history() -> void:
 	_event_history.clear()
 
 ## 记录事件
+## [param event_name] 事件名
+## [param payload] 事件负载
 func _record_event(event_name: String, payload: Array) -> void:
 	var event = {
 		"timestamp": Time.get_unix_time_from_system(),
@@ -169,5 +173,24 @@ func _record_event(event_name: String, payload: Array) -> void:
 		_event_history.pop_back()
 
 ## 延迟调用回调
+## [param callback] 回调函数
+## [param payload] 事件负载
 func _deferred_call(callback: Callable, payload: Array) -> void:
 	callback.callv(payload)
+
+## 事件订阅信息
+class Subscription:
+	## 回调函数
+	var callback: Callable
+	## 优先级
+	var priority: Priority
+	## 是否只触发一次
+	var once: bool
+	## 过滤器
+	var filter: Callable
+	
+	func _init(cb: Callable, p: Priority, o: bool, f: Callable = func(_p): return true) -> void:
+		callback = cb
+		priority = p
+		once = o
+		filter = f
