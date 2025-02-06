@@ -2,8 +2,6 @@ extends "res://addons/godot_core_system/source/manager_base.gd"
 
 ## 日志工具
 
-const ConsoleInterface = preload("res://addons/godot_core_system/source/logger/console/console_interface.gd")
-
 ## 日志级别枚举
 enum LogLevel {
 	DEBUG = 0,
@@ -30,17 +28,9 @@ var _enable_file_logging: bool = false
 var _log_file_path: String = "user://logs/game.log"
 ## 日志文件对象
 var _log_file: FileAccess = null
-## 控制台接口
-var _console: ConsoleInterface = null
 
 func _init(data: Dictionary = {}) -> void:
-	_console = data.get("console_adapter", null)
 	_setup_file_logging()
-
-## 设置控制台
-## [param console] 控制台实例
-func set_console(console) -> void:
-	_console = console
 
 ## 设置日志级别
 ## [param level] 日志级别
@@ -101,18 +91,6 @@ func _log(level: LogLevel, message: String, context: Dictionary) -> void:
 	
 	if not context.is_empty():
 		formatted_message += " | Context: " + str(context)
-	
-	# 控制台输出
-	if _console:
-		match level:
-			LogLevel.DEBUG:
-				_console.write_debug(formatted_message)
-			LogLevel.WARNING:
-				_console.write_warning(formatted_message)
-			LogLevel.ERROR, LogLevel.FATAL:
-				_console.write_error(formatted_message)
-			_:
-				_console.write_line(formatted_message, LOG_COLORS[level])
 	else:
 		print(formatted_message)
 	

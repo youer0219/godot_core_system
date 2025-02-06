@@ -15,9 +15,6 @@ const AsyncIOManager = preload("res://addons/godot_core_system/source/serializat
 const SaveManager = preload("res://addons/godot_core_system/source/serialization/save_system/save_manager.gd")
 const ConfigManager = preload("res://addons/godot_core_system/source/serialization/config_system/config_manager.gd")
 const StateMachineManager = preload("res://addons/godot_core_system/source/state_machine/state_machine_manager.gd")
-const ConsoleInterface = preload("res://addons/godot_core_system/source/logger/console/console_interface.gd")
-
-const PankuConsoleAdapter = preload("res://addons/godot_core_system/source/logger/console/panku_console_adapter.gd")
 
 ## 音频管理器
 var audio_manager : AudioManager:
@@ -40,7 +37,7 @@ var input_manager : InputManager:
 ## Logger
 var logger : Logger:
 	get:
-		return get_module("logger", {"console_adapter": PankuConsoleAdapter.new()})
+		return get_module("logger")
 	set(value):
 		push_error("logger is read-only")
 ## 资源管理器
@@ -52,7 +49,7 @@ var resource_manager : ResourceManager:
 ## 场景管理器
 var scene_manager : SceneManager:
 	get:
-		return get_module("scene_manager")
+		return get_module("scene_manager", {"root" : get_tree().root})
 	set(value):
 		push_error("scene_manager is read-only")
 ## 时间管理器
@@ -110,10 +107,6 @@ func _input(event: InputEvent) -> void:
 	for module in _modules.values():
 		module._input(event)
 
-## 设置控制台
-func set_console(console: ConsoleInterface) -> void:
-	logger.set_console(console)
-
 ## 获取模块
 func get_module(module_id: StringName, data : Dictionary = {}) -> ManagerBase:
 	if not _modules.has(module_id):
@@ -134,7 +127,7 @@ func is_module_enabled(module_id: StringName) -> bool:
 	return ProjectSettings.get_setting(setting_name, true)
 
 ## 创建模块实例
-func _create_module(module_id: StringName, data: Dictionary = {}) -> ManagerBase:	
+func _create_module(module_id: StringName, data: Dictionary = {}) -> ManagerBase:
 	var script = _module_scripts[module_id]
 	if not script:
 		push_error("无法加载模块脚本：" + module_id)
