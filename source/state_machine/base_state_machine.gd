@@ -106,6 +106,8 @@ func resume() -> void:
 ## 添加状态
 func add_state(state_id: StringName, new_state: BaseState) -> BaseState:
 	states[state_id] = new_state
+	new_state.state_machine = self
+	new_state.agent = agent
 	# new_state.call("ready")
 	return new_state
 

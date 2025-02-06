@@ -18,12 +18,6 @@ var agent: Node = null
 var is_active: bool = false
 var _is_ready
 
-func _init(machine = null, p_agent: Node = null) -> void:
-	state_machine = machine
-	if p_agent == null:
-		agent = state_machine.agent
-	agent = p_agent
-
 func ready() -> void:
 	if _is_ready: 
 		push_error("State is already ready!")
