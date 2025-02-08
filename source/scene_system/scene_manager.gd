@@ -234,8 +234,8 @@ func _do_scene_switch(
 			_current_scene.queue_free()
 
 	# 添加新场景
-	CoreSystem.get_tree().root.add_child(new_scene)
-	CoreSystem.get_tree().current_scene = new_scene
+	CoreSystem.get_tree().root.call_deferred("add_child", new_scene)
+	#CoreSystem.get_tree().current_scene = new_scene
 	_current_scene = new_scene
 		
 	scene_changed.emit(old_scene, new_scene)
