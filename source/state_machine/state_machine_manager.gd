@@ -41,7 +41,7 @@ func _input(event: InputEvent) -> void:
 func register_state_machine(
 		id: StringName, 
 		state_machine: BaseStateMachine,
-		agent: Node = null,
+		agent: Object = null,
 		initial_state: StringName = &"", 
 		msg: Dictionary = {}) -> void:
 	if _state_machines.has(id):

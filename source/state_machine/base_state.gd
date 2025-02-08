@@ -12,7 +12,7 @@ signal state_exited
 ## 状态机引用
 var state_machine = null
 ## 代理者
-var agent: Node = null
+var agent: Object = null
 
 ## 是否活跃
 var is_active: bool = false
