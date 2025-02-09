@@ -4,14 +4,14 @@
 
 [English](README.md) | [简体中文](README_zh.md)
 
-![Godot v4.x](https://img.shields.io/badge/Godot-v4.x-478cbf?logo=godot-engine&logoColor=white)
+![Godot v4.4](https://img.shields.io/badge/Godot-v4.4-478cbf?logo=godot-engine&logoColor=white)
 [![GitHub license](https://img.shields.io/github/license/Liweimin0512/godot_core_system)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/issues)
 [![GitHub forks](https://img.shields.io/github/forks/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/network)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-一个为 Godot 4.x 设计的高度模块化、易扩展的核心系统框架
+一个为 Godot 4.4 设计的高度模块化、易扩展的核心系统框架
 
 [快速开始](#快速开始) •
 [文档](#文档) •

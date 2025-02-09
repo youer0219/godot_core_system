@@ -23,7 +23,7 @@ func _ready() -> void:
 	_resource_manager.resource_loaded.connect(
 		func(resource_path: String, resource: Resource):
 			if resource is PackedScene:
-				var entity_id: StringName = _entity_path_map.find_key(resource_path)
+				var entity_id := _entity_path_map.find_key(resource_path)
 				if not entity_id:
 					return
 				if _entity_resource_cache.has(entity_id):
