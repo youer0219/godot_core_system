@@ -68,6 +68,12 @@ const MODULES = {
 		"description": "管理状态机",
 		"default": true,
 		"hide": false
+	},
+	"entity_manager":{
+		"name": "Entity Manager",
+		"description": "管理实体",
+		"default": true,
+		"hide": false
 	}
 }
 

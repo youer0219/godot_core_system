@@ -15,6 +15,7 @@ const AsyncIOManager = preload("res://addons/godot_core_system/source/serializat
 const SaveManager = preload("res://addons/godot_core_system/source/serialization/save_system/save_manager.gd")
 const ConfigManager = preload("res://addons/godot_core_system/source/serialization/config_system/config_manager.gd")
 const StateMachineManager = preload("res://addons/godot_core_system/source/state_machine/state_machine_manager.gd")
+const EntityManager = preload("res://addons/godot_core_system/source/entity_system/entity_manager.gd")
 
 ## 音频管理器
 var audio_manager : AudioManager:
@@ -82,6 +83,12 @@ var state_machine_manager : StateMachineManager:
 		return get_module("state_machine_manager")
 	set(value):
 		push_error("state_machine_manager is read-only")
+## 实体管理器
+var entity_manager : EntityManager:
+	get:
+		return get_module("entity_manager")
+	set(value):
+		push_error("entity_manager is read-only")
 
 ## 模块实例
 var _modules: Dictionary[StringName, ManagerBase] = {}
@@ -97,6 +104,7 @@ var _module_scripts: Dictionary[StringName, Script] = {
 	"save_manager": SaveManager,
 	"config_manager": ConfigManager,
 	"state_machine_manager": StateMachineManager,
+	"entity_manager": EntityManager,
 }
 
 func _process(delta: float) -> void:
