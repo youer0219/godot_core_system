@@ -1,4 +1,5 @@
 extends Node
+class_name EntityLogic
 
 ## 实体逻辑基类
 ## 提供组件化支持和生命周期管理
@@ -10,11 +11,6 @@ signal component_removed(component_id: StringName)
 
 ## 组件字典
 var _components: Dictionary = {}
-
-## 初始化
-func _ready() -> void:
-	initialize()
-
 
 ## 判断是否为组件
 func is_component(ref: RefCounted) -> bool:
@@ -28,23 +24,23 @@ func is_component(ref: RefCounted) -> bool:
 	return false
 
 ## 初始化
-func initialize() -> void:
+func initialize(data: Dictionary = {}) -> void:
 	for _component in _components.values():
 		_initialize_component(_component)
-	_initialize()
+	_initialize(data)
 
 ## 更新组件
-func update_component(data: Dictionary = {}) -> void:
-	for _component in _components.values():
-		if _component is LogicComponent:
-			_component.update(data)
-		elif _component.has_method("_update"):
-			_component._update(data)
+func update_component(component_id: StringName, data: Dictionary = {}) -> void:
+	var component = _components.get(component_id)
+	if component == null:
+		push_warning("组件不存在: %s" % component_id)
+		return
+	_update_component(component, data)
 
 ## 添加组件
 ## [param component_id] 组件ID
 ## [param component] 组件实例
-func add_component(component_id: StringName, component: RefCounted, data: Dictionary = {}) -> void:
+func add_component(component_id: StringName, component: RefCounted) -> RefCounted:
 	if not is_component(component):
 		push_error("组件不是LogicComponent子类: %s" % component)
 		return	
@@ -52,8 +48,9 @@ func add_component(component_id: StringName, component: RefCounted, data: Dictio
 		push_warning("组件已存在: %s" % component_id)
 		return
 	_components[component_id] = component
-	_initialize_component(component, data)
+	_initialize_component(component)
 	component_added.emit(component_id, component)
+	return component
 
 ## 移除组件
 ## [param component_id] 组件ID
@@ -78,7 +75,7 @@ func get_components() -> Dictionary:
 	return _components
 
 ## 初始化
-func _initialize() -> void:
+func _initialize(data: Dictionary = {}) -> void:
 	pass
 
 ## 清理组件
@@ -91,11 +88,13 @@ func _exit_tree() -> void:
 	_clear_components()
 
 ## 初始化组件
-func _initialize_component(component: RefCounted, data: Dictionary = {}) -> void:
+func _initialize_component(component: RefCounted) -> void:
+	if "owner" in component:
+		component.owner = self
 	if component is LogicComponent:
-		component.initialize(data)
+		component.initialize()
 	elif component.has_method("_initialize"):
-		component._initialize(data)
+		component._initialize()
 
 ## 清理组件
 func _dispose_component(component: RefCounted) -> void:
@@ -103,3 +102,12 @@ func _dispose_component(component: RefCounted) -> void:
 		component.cleanup()
 	elif component.has_method("_cleanup"):
 		component._cleanup()
+	if "owner" in component:
+		component.owner = null
+
+## 更新组件数据
+func _update_component(component: RefCounted, data: Dictionary) -> void:
+	if component is LogicComponent:
+		component.update_data(data)
+	elif component.has_method("_on_data_updated"):
+		component._on_data_updated(data)

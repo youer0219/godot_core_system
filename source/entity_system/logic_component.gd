@@ -1,4 +1,4 @@
-extends RefCounted
+extends Resource
 class_name LogicComponent
 
 ## 组件基类
@@ -13,12 +13,12 @@ var component_id: StringName:
 
 ## 组件数据
 var component_data: Dictionary = {}
+## 所属实体
+var owner : EntityLogic
 
 ## 初始化组件
-## [param data] 组件数据
-func initialize(data: Dictionary = {}) -> void:
-	component_data = data
-	_initialize(data)
+func initialize() -> void:
+	_initialize()
 
 ## 更新组件数据
 ## [param data] 组件数据
@@ -32,7 +32,7 @@ func cleanup() -> void:
 	component_data.clear()
 
 ## 子类重写的初始化方法
-func _initialize(data: Dictionary) -> void:
+func _initialize() -> void:
 	pass
 
 ## 子类重写的数据更新回调

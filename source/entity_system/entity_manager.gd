@@ -75,7 +75,7 @@ func unload_entity(entity_id: StringName) -> void:
 ## 创建实体
 ## [param entity_id] 实体ID
 ## [param parent] 父节点
-func create_entity(entity_id: StringName, parent : Node = null) -> Node:
+func create_entity(entity_id: StringName, entity_config: Resource, parent : Node = null) -> Node:
 	var instance : Node =  _resource_manager.get_instance(_entity_path_map[entity_id])
 	if not instance:
 		instance = _entity_resource_cache[entity_id].instantiate()
@@ -84,6 +84,9 @@ func create_entity(entity_id: StringName, parent : Node = null) -> Node:
 		push_error("实体实例不是 Node 类型: %s" % entity_id)
 		return
 	
+	if instance.has_method("initialize"):
+		instance.initialize(entity_config)
+
 	if parent:
 		parent.add_child(instance)
 	
