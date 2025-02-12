@@ -27,7 +27,7 @@ signal event_handled(event_name: String, payload: Array)
 ## [param event_name] 事件名
 ## [param payload] 事件负载
 ## [param immediate] 是否立即触发事件
-func push_event(event_name: String, payload = null, immediate: bool = true) -> void:
+func push_event(event_name: String, payload : Variant = [], immediate: bool = true) -> void:
 	if not payload is Array:
 		payload = [payload]
 	
