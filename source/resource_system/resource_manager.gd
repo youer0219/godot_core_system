@@ -27,6 +27,10 @@ var _lazy_load_time: float = 0.0
 ## 待加载资源数量
 var _loading_count: int = 0
 
+var _logger: CoreSystem.Logger:
+	get:
+		return CoreSystem.logger
+
 ## 处理懒加载
 func _process(delta: float) -> void:
 	_lazy_load(delta)
@@ -49,8 +53,8 @@ func load_resource(path: String, mode: LOAD_MODE = LOAD_MODE.IMMEDIATE) -> Resou
 		LOAD_MODE.LAZY:
 			ResourceLoader.load_threaded_request(path)
 			_loading_count += 1
+	_resource_cache[path] = resource
 	if resource:
-		_resource_cache[path] = resource
 		resource_loaded.emit(path, resource)
 	return resource
 
@@ -58,7 +62,8 @@ func load_resource(path: String, mode: LOAD_MODE = LOAD_MODE.IMMEDIATE) -> Resou
 ## [param path] 资源路径
 ## [return] 缓存中的资源
 func get_cached_resource(path: String) -> Resource:
-	if not _resource_cache.has(path):
+	if _resource_cache.get(path, null) == null:
+		_logger.warning("[ResourceManager]cannot get cached resource on {0}, reload it!".format([path]))
 		return load_resource(path)
 	return _resource_cache.get(path)
 

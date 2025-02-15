@@ -4,7 +4,7 @@ extends "res://addons/godot_core_system/source/manager_base.gd"
 ## 负责管理实体的生命周期和资源加载
 
 ## 实体加载完成信号
-signal entity_loaded(entity_id: StringName, entity: Node)
+signal entity_loaded(entity_id: StringName, entity: PackedScene)
 signal entity_unloaded(entity_id: StringName)
 ## 实体销毁信号
 signal entity_created(entity_id: StringName, entity: Node)
@@ -88,18 +88,13 @@ func create_entity(entity_id: StringName, entity_config: Resource, parent : Node
 	if parent:
 		parent.add_child(instance)
 	
-	init_entity(instance, entity_config)
-	
-	entity_created.emit(entity_id, instance)
-	return instance
-
-## 初始化实体
-## [param entity_id] 实体ID
-## [param instance] 要初始化的实体
-func init_entity(instance : Node, entity_config: Resource) -> void:
+	## 初始化实体
 	if not instance.has_method("initialize"):
 		return
 	instance.initialize(entity_config)
+
+	entity_created.emit(entity_id, instance)
+	return instance
 
 ## 更新实体
 ## [param entity_id] 实体ID
