@@ -5,7 +5,7 @@ extends "res://addons/godot_core_system/source/manager_base.gd"
 
 ## 资源加载模式
 enum LOAD_MODE {
-	## 立即加载
+	## 立即加载a
 	IMMEDIATE,
 	## 懒加载
 	LAZY
