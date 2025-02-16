@@ -1,6 +1,53 @@
 extends "res://addons/godot_core_system/source/manager_base.gd"
 
-## 存档管理器
+## 存档管理器，负责存档的创建、加载、删除等操作
+
+## 存档数据
+const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
+
+## 项目设置路径常量
+const SETTING_SAVE_DIR = "core_system/save_system/save_directory"
+const SETTING_SAVE_EXT = "core_system/save_system/save_extension"
+const SETTING_AUTO_SAVE_INTERVAL = "core_system/save_system/auto_save_interval"
+const SETTING_MAX_AUTO_SAVES = "core_system/save_system/max_auto_saves"
+const SETTING_AUTO_SAVE_ENABLED = "core_system/save_system/auto_save_enabled"
+
+
+## 存档目录
+var save_directory: String:
+	get:
+		return ProjectSettings.get_setting(SETTING_SAVE_DIR, "user://saves")
+
+## 存档扩展名
+var save_extension: String:
+	get:
+		return ProjectSettings.get_setting(SETTING_SAVE_EXT, "save")
+
+## 自动存档间隔（秒）
+var auto_save_interval: float:
+	get:
+		return ProjectSettings.get_setting(SETTING_AUTO_SAVE_INTERVAL, 300)
+
+## 自动存档最大数量
+var max_auto_saves: int:
+	get:
+		return ProjectSettings.get_setting(SETTING_MAX_AUTO_SAVES, 3)
+
+## 是否启用自动存档
+var auto_save_enabled: bool:
+	get:
+		return ProjectSettings.get_setting(SETTING_AUTO_SAVE_ENABLED, true)
+
+## 当前存档
+var _current_save: GameStateData = null
+## 异步IO管理器
+var _io_manager: CoreSystem.AsyncIOManager:
+	get:
+		return CoreSystem.io_manager
+
+## 自动存档计时器
+var _auto_save_timer: float = 0
+
 
 # 信号
 ## 存档创建
@@ -10,62 +57,20 @@ signal save_loaded(save_name: String)
 ## 存档删除
 signal save_deleted(save_name: String)
 ## 自动存档
-signal auto_save_created()
+signal auto_save_created
 
-const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
-const AsyncIOManager = preload("res://addons/godot_core_system/source/serialization/io_system/async_io_manager.gd")
-
-## 存档目录
-var save_directory: String:
-	get:
-		return ProjectSettings.get_setting("core_system/save_system/save_directory", "user://saves")
-
-## 存档扩展名
-var save_extension: String:
-	get:
-		return ProjectSettings.get_setting("core_system/save_system/save_extension", "save")
-
-## 自动存档间隔（秒）
-var auto_save_interval: float:
-	get:
-		return ProjectSettings.get_setting("core_system/save_system/auto_save_interval", 300)
-
-## 自动存档最大数量
-var max_auto_saves: int:
-	get:
-		return ProjectSettings.get_setting("core_system/save_system/max_auto_saves", 3)
-
-## 是否启用自动存档
-var auto_save_enabled: bool:
-	get:
-		return ProjectSettings.get_setting("core_system/save_system/auto_save_enabled", true)
-
-## 当前存档
-var _current_save: GameStateData
-## 异步IO管理器
-var _io_manager: AsyncIOManager
-## 自动存档计时器
-var _auto_save_timer: float = 0
-
-func _init(_data: Dictionary = {}):
-	_current_save = null
-	_io_manager = AsyncIOManager.new()
-
+# 每帧判断是否需要自动存档
 func _process(delta: float) -> void:
-	if auto_save_enabled and _current_save != null:
-		_auto_save_timer += delta
-		if _auto_save_timer >= auto_save_interval:
-			_auto_save_timer = 0
-			create_auto_save()
+	_update_auto_save(delta)
 
 ## 创建存档
 ## [param save_name] 存档名称
-## [param callback] 回调函数
+## [param callback] 回调函数，用于通知创建结果
 func create_save(save_name: String, callback: Callable = func(_success: bool): pass) -> void:
 	_current_save = GameStateData.new(save_name)
 	
 	# 收集所有可序列化组件的数据
-	var serializable_nodes = CoreSystem.get_tree().get_nodes_in_group("serializable")
+	var serializable_nodes = CoreSystem.get_tree().get_nodes_in_group(SerializableComponent.GROUP_NAME)
 	var serialized_data = {}
 	for node in serializable_nodes:
 		if node is SerializableComponent:
@@ -90,7 +95,7 @@ func create_save(save_name: String, callback: Callable = func(_success: bool): p
 
 ## 加载存档
 ## [param save_name] 存档名称
-## [param callback] 回调函数
+## [param callback] 回调函数,用于通知加载结果
 func load_save(save_name: String, callback: Callable = func(_success: bool): pass) -> void:
 	var save_path = _get_save_path(save_name)
 	
@@ -184,3 +189,14 @@ func _clean_old_auto_saves() -> void:
 ## [return] 存档路径
 func _get_save_path(save_name: String) -> String:
 	return save_directory.path_join(save_name + "." + save_extension)
+
+## 更新自动存档计时器并在需要时创建自动存档
+## [param delta] 时间增量
+func _update_auto_save(delta: float) -> void:
+	if not auto_save_enabled or _current_save == null:
+		return
+	
+	_auto_save_timer += delta
+	if _auto_save_timer >= auto_save_interval:
+		_auto_save_timer = 0
+		create_auto_save()

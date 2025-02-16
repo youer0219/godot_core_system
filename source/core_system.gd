@@ -17,6 +17,8 @@ const ConfigManager = preload("res://addons/godot_core_system/source/serializati
 const StateMachineManager = preload("res://addons/godot_core_system/source/state_machine/state_machine_manager.gd")
 const EntityManager = preload("res://addons/godot_core_system/source/entity_system/entity_manager.gd")
 
+const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
+
 ## 音频管理器
 var audio_manager : AudioManager:
 	get:

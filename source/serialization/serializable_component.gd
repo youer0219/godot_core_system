@@ -5,6 +5,8 @@ class_name SerializableComponent
 ## 可序列化组件
 ## 提供节点级别的序列化支持，可用于存档系统和配置系统
 
+const GROUP_NAME : StringName = &"serializable"
+
 # 信号
 ## 属性变化
 signal property_changed(property: String, value: Variant)
@@ -21,6 +23,12 @@ var _default_values: Dictionary = {}
 var _serialize_callbacks: Dictionary = {}
 ## 反序列化回调
 var _deserialize_callbacks: Dictionary = {}
+
+func _enter_tree() -> void:
+	add_to_group(GROUP_NAME)
+
+func _exit_tree() -> void:
+	remove_from_group(GROUP_NAME)
 
 ## 注册属性
 ## [param property] 属性名

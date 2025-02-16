@@ -62,6 +62,9 @@ func load_resource(path: String, mode: LOAD_MODE = LOAD_MODE.IMMEDIATE) -> Resou
 ## [param path] 资源路径
 ## [return] 缓存中的资源
 func get_cached_resource(path: String) -> Resource:
+	if _resource_cache.has(path) and _resource_cache[path] == null:
+		# 如果资源正在加载，则这里调用直接加载
+		_loading_count -= 1
 	if _resource_cache.get(path, null) == null:
 		_logger.warning("[ResourceManager]cannot get cached resource on {0}, reload it!".format([path]))
 		return load_resource(path)

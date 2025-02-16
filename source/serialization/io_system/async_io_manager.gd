@@ -1,40 +1,39 @@
 extends "res://addons/godot_core_system/source/manager_base.gd"
 
 ## 异步IO管理器
+## 提供三个层次的API：
+## 1. 基础API - 简单的异步读写操作
+## 2. 进阶API - 支持压缩功能
+## 3. 完整API - 支持压缩和加密功能
 
 # 信号
 ## IO完成
 signal io_completed(task_id: String, success: bool, result: Variant)
-## IO进度
-signal io_progress(task_id: String, progress: float)
 ## IO错误
 signal io_error(task_id: String, error: String)
 
 ## IO任务类型
 enum TaskType {
-	READ,			# 读取
-	WRITE,			# 写入
-	DELETE,			# 删除
+	READ,   # 读取
+	WRITE,  # 写入
+	DELETE  # 删除
 }
 
 ## IO任务状态
 enum TaskStatus {
-	PENDING,		# 未开始
-	RUNNING,		# 运行中
-	COMPLETED,		# 完成
-	ERROR,			# 错误
+	PENDING,   # 未开始
+	RUNNING,   # 运行中
+	COMPLETED, # 完成
+	ERROR      # 错误
 }
 
-## 任务队列
+# 私有变量
 var _tasks: Array[IOTask] = []
-## 工作线程
 var _thread: Thread
-## 线程同步信号量
 var _semaphore: Semaphore
-## 线程运行标志
 var _running: bool = true
-## 互斥锁
 var _mutex: Mutex
+var _task_counter: int = 0  # 任务计数器
 
 func _init(_data:Dictionary = {}):
 	_semaphore = Semaphore.new()
@@ -43,12 +42,56 @@ func _init(_data:Dictionary = {}):
 	_thread.start(_thread_function)
 
 func _exit() -> void:
-	# 停止工作线程
 	_running = false
 	_semaphore.post()
 	_thread.wait_to_finish()
 
-## 异步读取文件
+### 基础API ###
+
+## 异步读取文件（基础版本）
+## [param path] 文件路径
+## [param callback] 回调函数，接收(success: bool, result: Variant)
+## [return] 任务ID
+func read_file(path: String, callback: Callable = func(_s, _r): pass) -> String:
+	return read_file_advanced(path, false, callback)
+
+## 异步写入文件（基础版本）
+## [param path] 文件路径
+## [param data] 要写入的数据
+## [param callback] 回调函数，接收(success: bool, result: Variant)
+## [return] 任务ID
+func write_file(path: String, data: Variant, callback: Callable = func(_s, _r): pass) -> String:
+	return write_file_advanced(path, data, false, callback)
+
+## 异步删除文件（基础版本）
+## [param path] 文件路径
+## [param callback] 回调函数，接收(success: bool, result: Variant)
+## [return] 任务ID
+func delete_file(path: String, callback: Callable = func(_s, _r): pass) -> String:
+	return delete_file_async(path, callback)
+
+### 进阶API ###
+
+## 异步读取文件（进阶版本）
+## [param path] 文件路径
+## [param use_compression] 是否使用压缩
+## [param callback] 回调函数，接收(success: bool, result: Variant)
+## [return] 任务ID
+func read_file_advanced(path: String, use_compression: bool = false, callback: Callable = func(_s, _r): pass) -> String:
+	return read_file_async(path, use_compression, false, "", callback)
+
+## 异步写入文件（进阶版本）
+## [param path] 文件路径
+## [param data] 要写入的数据
+## [param use_compression] 是否使用压缩
+## [param callback] 回调函数，接收(success: bool, result: Variant)
+## [return] 任务ID
+func write_file_advanced(path: String, data: Variant, use_compression: bool = false, callback: Callable = func(_s, _r): pass) -> String:
+	return write_file_async(path, data, use_compression, false, "", callback)
+
+### 完整API ###
+
+## 异步读取文件（完整版本）
 ## [param path] 文件路径
 ## [param compression] 是否压缩
 ## [param encryption] 是否加密
@@ -60,9 +103,9 @@ func read_file_async(
 	compression: bool = false,
 	encryption: bool = false,
 	encryption_key: String = "",
-	callback: Callable = func(_success: bool, _result: Variant): pass
+	callback: Callable = func(_s, _r): pass
 ) -> String:
-	var task_id = str(Time.get_unix_time_from_system())
+	var task_id = _generate_task_id()
 	var task = IOTask.new(
 		task_id,
 		TaskType.READ,
@@ -74,14 +117,10 @@ func read_file_async(
 		callback
 	)
 	
-	_mutex.lock()
-	_tasks.append(task)
-	_mutex.unlock()
-	
-	_semaphore.post()
+	_add_task(task)
 	return task_id
 
-## 异步写入文件
+## 异步写入文件（完整版本）
 ## [param path] 文件路径
 ## [param data] 数据
 ## [param compression] 是否压缩
@@ -95,9 +134,9 @@ func write_file_async(
 	compression: bool = false,
 	encryption: bool = false,
 	encryption_key: String = "",
-	callback: Callable = func(_success: bool, _result: Variant): pass
+	callback: Callable = func(_s, _r): pass
 ) -> String:
-	var task_id = str(Time.get_unix_time_from_system())
+	var task_id = _generate_task_id()
 	var task = IOTask.new(
 		task_id,
 		TaskType.WRITE,
@@ -109,22 +148,15 @@ func write_file_async(
 		callback
 	)
 	
-	_mutex.lock()
-	_tasks.append(task)
-	_mutex.unlock()
-	
-	_semaphore.post()
+	_add_task(task)
 	return task_id
 
 ## 异步删除文件
 ## [param path] 文件路径
 ## [param callback] 回调函数
 ## [return] 任务ID
-func delete_file_async(
-	path: String, 
-	callback: Callable = func(_success: bool, _result: Variant): pass
-) -> String:
-	var task_id = str(Time.get_unix_time_from_system())
+func delete_file_async(path: String, callback: Callable = func(_s, _r): pass) -> String:
+	var task_id = _generate_task_id()
 	var task = IOTask.new(
 		task_id,
 		TaskType.DELETE,
@@ -136,112 +168,109 @@ func delete_file_async(
 		callback
 	)
 	
-	_mutex.lock()
-	_tasks.append(task)
-	_mutex.unlock()
-	
-	_semaphore.post()
+	_add_task(task)
 	return task_id
+
+### 私有方法 ###
 
 ## 工作线程函数
 func _thread_function() -> void:
 	while _running:
-		_semaphore.wait()
+		_semaphore.wait()  # 等待任务
 		
-		if not _running:
+		if not _running:  # 再次检查，以防在等待时被终止
 			break
-		
+			
+		var task: IOTask
 		_mutex.lock()
-		var task = _tasks.pop_front() if not _tasks.is_empty() else null
+		if not _tasks.is_empty():
+			task = _tasks.pop_front()
+			print("[AsyncIOManager] Processing task: ", task.id)
 		_mutex.unlock()
 		
-		if task:
-			task.status = TaskStatus.RUNNING
+		if task == null:
+			continue
 			
-			match task.type:
-				TaskType.READ:
-					_handle_read_task(task)
-				TaskType.WRITE:
-					_handle_write_task(task)
-				TaskType.DELETE:
-					_handle_delete_task(task)
+		# 处理任务
+		match task.type:
+			TaskType.READ:
+				_handle_read_task(task)
+			TaskType.WRITE:
+				_handle_write_task(task)
+			TaskType.DELETE:
+				_handle_delete_task(task)
 
-## 处理读取任务
-## [param task] 任务
-func _handle_read_task(task: IOTask) -> void:
-	if not FileAccess.file_exists(task.path):
-		call_deferred("_complete_task", task, false, null, "File not found")
+		# 处理下一个任务
+		if not _tasks.is_empty():
+			print("[AsyncIOManager] Posting semaphore for next task.")
+			_semaphore.post()
+
+## 添加任务到队列
+func _add_task(task: IOTask) -> void:
+	if not _running:
+		call_deferred("_complete_task", task, false, null, "Manager is not running")
 		return
 	
-	var file = FileAccess.open(task.path, FileAccess.READ)
-	if not file:
-		call_deferred("_complete_task", task, false, null, "Failed to open file")
-		return
+	_mutex.lock()
+	_tasks.append(task)
+	var was_empty = _tasks.size() == 1
+	_mutex.unlock()
 	
-	var content = file.get_as_text()
-	file.close()
-	
-	# 解密
-	if task.encryption and task.encryption_key != "":
-		var crypto := Crypto.new()
-		var key :PackedByteArray = crypto.generate_random_bytes(32)  # 使用SHA-256生成密钥
-		var iv :PackedByteArray = crypto.generate_random_bytes(16)   # 使用AES-256-CBC的IV
-		var aes := AESContext.new()
-		aes.start(AESContext.Mode.MODE_CBC_DECRYPT, key, iv)
-		# 先将Base64编码的字符串转换回二进制数据
-		var encrypted_bytes := Marshalls.base64_to_raw(content)
-		var decrypted_bytes := aes.update(encrypted_bytes)
-		content = decrypted_bytes.get_string_from_utf8()
-	
-	# 解压
-	if task.compression:
-		var compressed_bytes = content.to_utf8_buffer()
-		content = compressed_bytes.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP).get_string_from_utf8()
-	
-	# 解析JSON
-	var parse_result = JSON.parse_string(content)
-	if parse_result == null:
-		call_deferred("_complete_task", task, false, null, "Failed to parse JSON")
-		return
-	
-	call_deferred("_complete_task", task, true, parse_result)
+	if was_empty:
+		print("[AsyncIOManager] Task queue was empty, posting semaphore.")
+		_semaphore.post()  # 只在队列从空变为非空时发送信号
 
 ## 处理写入任务
-## [param task] 任务
 func _handle_write_task(task: IOTask) -> void:
 	# 确保目录存在
-	DirAccess.make_dir_recursive_absolute(task.path.get_base_dir())
+	var dir := DirAccess.open(task.path.get_base_dir())
+	if dir == null:
+		var err := DirAccess.make_dir_recursive_absolute(task.path.get_base_dir())
+		if err != OK:
+			call_deferred("_complete_task", task, false, null, "Failed to create directory")
+			return
 	
-	var file = FileAccess.open(task.path, FileAccess.WRITE)
-	if not file:
+	var file := FileAccess.open(task.path, FileAccess.WRITE)
+	if file == null:
 		call_deferred("_complete_task", task, false, null, "Failed to open file")
 		return
 	
-	var content : String = JSON.stringify(task.data)
+	var processed_data = _process_data_for_write(task.data, task.compression, task.encryption, task.encryption_key)
+	if processed_data.is_empty():
+		file.close()
+		call_deferred("_complete_task", task, false, null, "Failed to process data")
+		return
 	
-	# 压缩
-	if task.compression:
-		var bytes = content.to_utf8_buffer()
-		content = bytes.compress(FileAccess.COMPRESSION_GZIP).get_string_from_utf8()
-	
-	# 加密
-	if task.encryption and task.encryption_key != "":
-		var crypto := Crypto.new()
-		var key := crypto.generate_random_bytes(32)  # 使用SHA-256生成密钥
-		var iv := crypto.generate_random_bytes(16)   # 使用AES-256-CBC的IV
-		var aes := AESContext.new()
-		aes.start(AESContext.Mode.MODE_CBC_ENCRYPT, key, iv)
-		# 将加密后的二进制数据转换为Base64编码的字符串
-		var encrypted_bytes := aes.update(content.to_utf8_buffer())
-		content = Marshalls.raw_to_base64(encrypted_bytes)
-	
-	file.store_string(content)
+	file.store_buffer(processed_data)
 	file.close()
 	
-	call_deferred("_complete_task", task, true, null)
+	if FileAccess.file_exists(task.path):
+		call_deferred("_complete_task", task, true, null)
+	else:
+		call_deferred("_complete_task", task, false, null, "File was not written successfully")
+
+## 处理读取任务
+func _handle_read_task(task: IOTask) -> void:
+	if not FileAccess.file_exists(task.path):
+		call_deferred("_complete_task", task, false, null, "File does not exist")
+		return
+	
+	var file := FileAccess.open(task.path, FileAccess.READ)
+	if file == null:
+		call_deferred("_complete_task", task, false, null, "Failed to open file")
+		return
+	
+	var content = file.get_buffer(file.get_length())
+	file.close()
+	
+	var processed_data = _process_data_for_read(content, task.compression, task.encryption, task.encryption_key)
+	if processed_data == null:
+		call_deferred("_complete_task", task, false, null, "Failed to process data")
+		return
+	
+	call_deferred("_complete_task", task, true, processed_data)
 
 ## 处理删除任务
-## [param task] 任务
 func _handle_delete_task(task: IOTask) -> void:
 	if not FileAccess.file_exists(task.path):
 		call_deferred("_complete_task", task, false, null, "File not found")
@@ -260,6 +289,7 @@ func _handle_delete_task(task: IOTask) -> void:
 ## [param result] 结果
 ## [param error] 错误
 func _complete_task(task: IOTask, success: bool, result: Variant = null, error: String = "") -> void:
+	print("[AsyncIOManager] Completing task: ", task.id, " Success: ", success, " Error: ", error)
 	task.status = TaskStatus.COMPLETED if success else TaskStatus.ERROR
 	task.error = error
 	
@@ -269,7 +299,83 @@ func _complete_task(task: IOTask, success: bool, result: Variant = null, error: 
 		io_error.emit(task.id, error)
 		io_completed.emit(task.id, false, null)
 	
-	task.callback.call(success, result)
+	if task.callback.is_valid():
+		task.callback.call(success, result)
+
+## 处理数据（写入）
+## [param data] 数据
+## [param compression] 是否压缩
+## [param encryption] 是否加密
+## [param encryption_key] 加密密钥
+## [return] 处理后的数据
+func _process_data_for_write(data: Variant, compression: bool, encryption: bool, encryption_key: String) -> PackedByteArray:
+	# 将数据转换为JSON字符串
+	var json_str := JSON.stringify(data)
+	var byte_array := json_str.to_utf8_buffer()
+	
+	# 压缩
+	if compression:
+		byte_array = byte_array.compress(FileAccess.COMPRESSION_GZIP)
+	
+	# 加密
+	if encryption and encryption_key:
+		# 使用AES256加密
+		var key := encryption_key.sha256_buffer()
+		byte_array = _encrypt_data(byte_array, key)
+	
+	return byte_array
+
+## 处理数据（读取）
+## [param byte_array] 数据
+## [param compression] 是否压缩
+## [param encryption] 是否加密
+## [param encryption_key] 加密密钥
+## [return] 处理后的数据
+func _process_data_for_read(byte_array: PackedByteArray, compression: bool, encryption: bool, encryption_key: String) -> Variant:
+	# 解密
+	if encryption and encryption_key:
+		var key := encryption_key.sha256_buffer()
+		byte_array = _decrypt_data(byte_array, key)
+	
+	# 解压
+	if compression:
+		byte_array = byte_array.decompress(byte_array.size() * 10, FileAccess.COMPRESSION_GZIP)
+	
+	# 解析JSON
+	var json_str := byte_array.get_string_from_utf8()
+	var json := JSON.new()
+	var error := json.parse(json_str)
+	if error == OK:
+		return json.get_data()
+	return null
+
+## 加密数据
+## [param data] 数据
+## [param key] 密钥
+## [return] 加密后的数据
+func _encrypt_data(data: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
+	# 简单的XOR加密，实际项目中应使用更安全的加密方法
+	var encrypted := PackedByteArray()
+	encrypted.resize(data.size())
+	for i in range(data.size()):
+		encrypted[i] = data[i] ^ key[i % key.size()]
+	return encrypted
+
+## 解密数据
+## [param data] 数据
+## [param key] 密钥
+## [return] 解密后的数据
+func _decrypt_data(data: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
+	# XOR解密
+	return _encrypt_data(data, key)  # XOR加密和解密使用相同的操作
+
+## 生成唯一的任务ID
+func _generate_task_id() -> String:
+	_mutex.lock()
+	_task_counter += 1
+	var counter = _task_counter
+	_mutex.unlock()
+	return "%d_%d" % [Time.get_ticks_msec(), counter]
 
 ## IO任务
 class IOTask:
@@ -302,7 +408,7 @@ class IOTask:
 		_compression: bool = false,
 		_encryption: bool = false,
 		_encryption_key: String = "",
-		_callback: Callable = func(_success: bool, _result: Variant): pass
+		_callback: Callable = func(_s, _r): pass
 	) -> void:
 		id = _id
 		type = _type

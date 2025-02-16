@@ -14,7 +14,7 @@ var metadata: Dictionary = {
 ## 游戏数据
 var game_data: Dictionary = {}
 
-## 初始化
+## 初始化，同时设置存档名称和时间戳
 ## [param save_name] 存档名称
 func _init(save_name: String = "") -> void:
 	metadata.save_name = save_name
@@ -54,6 +54,6 @@ func serialize() -> Dictionary:
 ## [param data] 序列化数据
 func deserialize(data: Dictionary) -> void:
 	if data.has("metadata"):
-		metadata = data.metadata
+		metadata.merge(data.metadata, true)
 	if data.has("game_data"):
 		game_data = data.game_data
