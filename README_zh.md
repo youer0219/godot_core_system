@@ -38,7 +38,7 @@
 
 ### 前提条件
 
-- Godot Engine 4.x
+- Godot Engine 4.4+
 - 基本的 GDScript 和 Godot 引擎知识
 
 ### 安装

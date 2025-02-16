@@ -38,7 +38,7 @@ A highly modular and extensible core system framework for Godot 4.4
 
 ### Prerequisites
 
-- Godot Engine 4.x
+- Godot Engine 4.4 +
 - Basic knowledge of GDScript and Godot Engine
 
 ### Installation
