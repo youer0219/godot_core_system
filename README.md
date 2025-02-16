@@ -14,10 +14,10 @@
 A highly modular and extensible core system framework designed for Godot 4.4+
 
 [Getting Started](#getting-started) •
-[Documentation](#documentation) •
-[Examples](#examples) •
+[Documentation](docs/) •
+[Examples](examples/) •
 [Contributing](CONTRIBUTING.md) •
-[Support](#support)
+[Support and Help](#-support--help)
 
 </div>
 
