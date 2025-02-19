@@ -1,10 +1,11 @@
 extends "res://addons/godot_core_system/source/manager_base.gd"
+#class_name EntityManager
 
 ## 实体管理器
 ## 负责管理实体的生命周期和资源加载
 
 ## 实体加载完成信号
-signal entity_loaded(entity_id: StringName, entity: PackedScene)
+signal entity_loaded
 signal entity_unloaded(entity_id: StringName)
 ## 实体销毁信号
 signal entity_created(entity_id: StringName, entity: Node)
@@ -29,7 +30,8 @@ func _ready() -> void:
 				if _entity_resource_cache.has(entity_id):
 					return
 				_entity_resource_cache[entity_id] = resource
-				entity_loaded.emit(entity_id, resource)
+				var scene : PackedScene = resource as PackedScene
+				entity_loaded.emit(entity_id, scene)
 	)
 	_resource_manager.resource_unloaded.connect(
 		func(resource_path: String):
