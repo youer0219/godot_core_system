@@ -49,23 +49,32 @@ func push_event(event_name: String, payload : Variant = [], immediate: bool = tr
 	subscribers.sort_custom(func(a, b): return a.priority > b.priority)
 	
 	# 收集需要移除的一次性订阅
-	var to_remove: Array[Subscription] = []
+	var to_remove: Array[WeakSubscription] = []
 	
 	# 处理事件
-	for sub in subscribers:
+	var valid_subscriptions := []
+	for sub : WeakSubscription in subscribers:
+		if not sub.is_valid(): # 检查回调是否有效
+			continue
+		valid_subscriptions.append(sub)
 		if sub.filter.call(payload):
 			if immediate:
-				sub.callback.callv(payload)
+				sub.call_subscribed(payload)
 			else:
-				call_deferred("_deferred_call", sub.callback, payload)
-			
+				call_deferred("_deferred_call", sub, payload)
 			if sub.once:
 				to_remove.append(sub)
+
+	# 更新订阅列表，移除无效订阅
+	if valid_subscriptions.size() != _subscriptions[event_name].size():
+		_subscriptions[event_name] = valid_subscriptions
+		if valid_subscriptions.is_empty():
+			_subscriptions.erase(event_name)
 	
 	# 移除一次性订阅
 	for sub in to_remove:
 		_subscriptions[event_name].erase(sub)
-	
+
 	event_handled.emit(event_name, payload)
 
 ## 订阅事件
@@ -93,7 +102,7 @@ func subscribe(
 				push_warning("Callback already subscribed to event: %s" % event_name)
 			return
 	
-	var subscription = Subscription.new(callback, priority, once, filter)
+	var subscription = WeakSubscription.new(callback, priority, once, filter)
 	_subscriptions[event_name].append(subscription)
 	
 	if debug_mode:
@@ -173,10 +182,11 @@ func _record_event(event_name: String, payload: Array) -> void:
 		_event_history.pop_back()
 
 ## 延迟调用回调
-## [param callback] 回调函数
+## [param subscription] 订阅对象
 ## [param payload] 事件负载
-func _deferred_call(callback: Callable, payload: Array) -> void:
-	callback.callv(payload)
+func _deferred_call(subscription: WeakSubscription, payload: Array) -> void:
+	if subscription.is_valid():
+		subscription.call_subscribed(payload)
 
 ## 事件订阅信息
 class Subscription:
@@ -194,3 +204,46 @@ class Subscription:
 		priority = p
 		once = o
 		filter = f
+
+	func call_subscribed(args: Array) -> void:
+		callback.callv(args)
+
+## 使用弱引用避免内存移除情况
+class WeakSubscription:
+	extends Subscription
+
+	var callback_object: WeakRef
+	var callback_method: StringName
+	var is_anonymous: bool
+
+	func _init(cb: Callable, p: Priority, o: bool, f: Callable = func(_p): return true) -> void:
+		callback_object = weakref(cb.get_object())
+		is_anonymous = cb.get_method() == "<anonymous lambda>"  # 检查是否是匿名方法
+		
+		if is_anonymous:
+			callback = cb  # 匿名方法保存完整的 Callable
+		else:
+			callback_method = cb.get_method()  # 普通方法只保存方法名
+			
+		priority = p
+		once = o
+		filter = f
+	
+	func is_valid() -> bool:
+		var obj = callback_object.get_ref()
+		if not obj:
+			return false
+		if is_anonymous:
+			return callback.is_valid()
+		return true
+	
+	func call_subscribed(args: Array) -> void:
+		var obj = callback_object.get_ref()
+		if obj:
+			if is_anonymous:
+				if not callback.is_valid():
+					CoreSystem.logger.error("callback is not valid, cant call subscribed!")
+					return
+				callback.callv(args)  # 匿名方法使用完整的 Callable
+			else:
+				obj.callv(callback_method, args)  # 普通方法使用 call

@@ -37,15 +37,19 @@ func unregister_trigger(trigger_type: StringName, trigger: Trigger) -> void:
 	if triggers.has(trigger):
 		triggers.erase(trigger)
 
-
+## 注册限制器类型
+## [param type] 限制器类型
+## [param condition_class] 限制器类
 func register_condition_type(type: StringName, condition_class: GDScript) -> void:
 	_condition_types[type] = condition_class
 
 
+## 卸载限制器类型
 func unregister_condition_type(type: StringName) -> void:
 	_condition_types.erase(type)
 
 
+## 创建限制器
 func create_condition(config: Dictionary) -> TriggerCondition:
 	var condition_type : StringName = config.get("type")
 	if not _condition_types.has(condition_type):
