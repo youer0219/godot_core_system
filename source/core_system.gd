@@ -16,6 +16,7 @@ const SaveManager = preload("res://addons/godot_core_system/source/serialization
 const ConfigManager = preload("res://addons/godot_core_system/source/serialization/config_system/config_manager.gd")
 const StateMachineManager = preload("res://addons/godot_core_system/source/state_machine/state_machine_manager.gd")
 const EntityManager = preload("res://addons/godot_core_system/source/entity_system/entity_manager.gd")
+const TriggerManager = preload("res://addons/godot_core_system/source/trigger_system/trigger_manager.gd")
 
 const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
 
@@ -91,6 +92,12 @@ var entity_manager : EntityManager:
 		return get_module("entity_manager")
 	set(value):
 		push_error("entity_manager is read-only")
+## 触发器管理器
+var trigger_manager : TriggerManager:
+	get:
+		return get_module("trigger_manager")
+	set(value):
+		push_error("trigger_manager is read-only")
 
 ## 模块实例
 var _modules: Dictionary[StringName, ManagerBase] = {}
@@ -107,6 +114,7 @@ var _module_scripts: Dictionary[StringName, Script] = {
 	"config_manager": ConfigManager,
 	"state_machine_manager": StateMachineManager,
 	"entity_manager": EntityManager,
+	"trigger_manager": TriggerManager
 }
 
 func _process(delta: float) -> void:
