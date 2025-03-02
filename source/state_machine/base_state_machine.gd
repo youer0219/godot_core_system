@@ -10,7 +10,7 @@ signal state_changed(from_state: BaseState, to_state: BaseState)
 ## 当前状态
 var current_state: BaseState = null
 ## 状态字典
-var states: Dictionary = {}
+var states: Dictionary[StringName, BaseState] = {}
 ## 变量字典
 var values: Dictionary = {}
 ## 上一个状态
@@ -20,7 +20,7 @@ func enter(msg: Dictionary = {}) -> bool:
 	if not super(msg):
 		return false
 	if current_state == null:
-		push_error("Entering null state!")
+		_logger.error("Entering null state!")
 		return false
 	return current_state.enter(msg)
 
@@ -65,7 +65,7 @@ func dispose() -> void:
 ## [param resume] 是否恢复到上一个状态
 func start(initial_state: StringName = &"", msg: Dictionary = {}, resume: bool = false) -> void:
 	if current_state != null:
-		push_warning("State machine is already running!")
+		_logger.warning("State machine is already running!")
 		return
 	
 	var target_state = initial_state
@@ -86,6 +86,7 @@ func start(initial_state: StringName = &"", msg: Dictionary = {}, resume: bool =
 	
 	current_state.enter(msg)
 	is_active = true
+	_debug("Starting state: %s" % target_state)
 
 ## 停止状态机
 func stop() -> void:
@@ -94,6 +95,8 @@ func stop() -> void:
 		current_state.exit()
 		current_state = null
 	is_active = false
+	_debug("Stopping state machine: %s" % state_id)
+
 
 ## 暂停状态机
 func pause() -> void:
@@ -108,7 +111,9 @@ func add_state(state_id: StringName, new_state: BaseState) -> BaseState:
 	states[state_id] = new_state
 	new_state.state_machine = self
 	new_state.agent = agent
-	# new_state.call("ready")
+	new_state.is_debug = is_debug
+	new_state.state_id = state_id
+	_debug("Adding state: %s" % state_id)
 	return new_state
 
 ## 移除状态
@@ -116,6 +121,7 @@ func remove_state(state_id: StringName) -> void:
 	if current_state == states.get(state_id):
 		current_state.exit()
 		current_state = null
+	_debug("Removing state: %s" % state_id)
 	states.erase(state_id)
 
 ## 切换状态
@@ -151,7 +157,4 @@ func has_variable(key: StringName) -> bool:
 
 ## 获取当前状态名称
 func get_current_state_name() -> StringName:
-	for state_name in states:
-		if states[state_name] == current_state:
-			return state_name
-	return &""
+	return current_state.state_id if current_state else &""

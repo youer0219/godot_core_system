@@ -9,8 +9,9 @@ signal state_entered(msg: Dictionary)
 ## 状态退出
 signal state_exited
 
+var state_id : StringName = &""
 ## 状态机引用
-var state_machine = null
+var state_machine : BaseStateMachine = null
 ## 代理者
 var agent: Object = null
 
@@ -18,9 +19,12 @@ var agent: Object = null
 var is_active: bool = false
 var _is_ready
 
+var is_debug: bool = false
+var _logger : CoreSystem.Logger = CoreSystem.logger
+
 func ready() -> void:
 	if _is_ready: 
-		push_error("State is already ready!")
+		_logger.warning("State is already ready!")
 		return
 	_ready()
 	_is_ready = true
@@ -32,18 +36,22 @@ func dispose() -> void:
 ## 进入状态
 func enter(msg: Dictionary = {}) -> bool:
 	if is_active:
+		_logger.warning("State is already active!")
 		return false
 	is_active = true
 	_enter(msg)
+	_debug("Entering state: %s" % state_id)
 	state_entered.emit(msg)
 	return true
 
 ## 退出状态
 func exit() -> bool:
 	if not is_active:
+		_logger.warning("State is not active!")
 		return false
 	is_active = false
 	_exit()
+	_debug("Exiting state: %s" % state_id)
 	state_exited.emit()
 	return true
 
@@ -114,3 +122,9 @@ func _physics_update(_delta: float) -> void:
 ## 虚函数 - 处理输入
 func _handle_input(_event: InputEvent) -> void:
 	pass
+
+
+func _debug(debug: String) -> void:
+	if not is_debug:
+		return
+	_logger.debug("[State] " + state_id + ": " + debug)
