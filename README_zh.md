@@ -56,14 +56,14 @@
 extends Node
 
 func _ready():
-    # 通过 CoreSystem 单例访问各个管理器
-    CoreSystem.state_machine_manager  # 状态机管理器
-    CoreSystem.save_manager          # 存档管理器
-    CoreSystem.audio_manager         # 音频管理器
-    CoreSystem.input_manager         # 输入管理器
-    CoreSystem.logger               # 日志管理器
-    CoreSystem.resource_manager     # 资源管理器
-    CoreSystem.scene_manager        # 场景管理器
+	# 通过 CoreSystem 单例访问各个管理器
+	CoreSystem.state_machine_manager  # 状态机管理器
+	CoreSystem.save_manager          # 存档管理器
+	CoreSystem.audio_manager         # 音频管理器
+	CoreSystem.input_manager         # 输入管理器
+	CoreSystem.logger               # 日志管理器
+	CoreSystem.resource_manager     # 资源管理器
+	CoreSystem.scene_manager        # 场景管理器
 ```
 
 ## 📚 文档
@@ -115,6 +115,6 @@ func _ready():
 ---
 
 <div align="center">
-    <strong>由 Liweimin0512 用 ❤️ 构建</strong><br>
-    <sub>让游戏开发变得更简单</sub>
+	<strong>由 Liweimin0512 用 ❤️ 构建</strong><br>
+	<sub>让游戏开发变得更简单</sub>
 </div>

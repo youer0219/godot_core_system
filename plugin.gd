@@ -74,15 +74,20 @@ const MODULES = {
 		"description": "管理实体",
 		"default": true,
 		"hide": false
+	},
+	"trigger_manager":{
+		"name" : "Trigger Manager",
+		"description" : "全局的触发器管理器",
+		"default": true,
+		"hide": false
+	},
+	"gameplay_tag_manager":{
+		"name" : "Gameplay Tag Manager",
+		"description" : "全局的标签管理器",
+		"default": true,
+		"hide": false
 	}
 }
-
-var _event_bus
-var _logger
-var _input_manager
-var _audio_manager
-var _scene_manager
-var _time_manager
 
 func _enter_tree():
 	# 确保项目设置分类存在
@@ -90,11 +95,6 @@ func _enter_tree():
 	# 添加模块设置
 	_add_module_settings()
 	ProjectSettings.save()
-	
-	# 检查并集成PankuConsole
-	var panku_console = get_editor_interface().get_base_control().get_node_or_null("/root/PankuConsole")
-	if panku_console:
-		_logger.set_console(panku_console)
 
 	add_autoload_singleton("CoreSystem", "res://addons/godot_core_system/source/core_system.gd")
 	_add_project_settings()
