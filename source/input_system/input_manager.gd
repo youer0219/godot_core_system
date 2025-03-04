@@ -1,4 +1,4 @@
-extends "res://addons/godot_core_system/source/manager_base.gd"
+extends Node
 
 signal action_triggered(action_name: String, event: InputEvent)
 signal axis_changed(axis_name: String, value: Vector2)

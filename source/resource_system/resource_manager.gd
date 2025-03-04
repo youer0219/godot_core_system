@@ -1,4 +1,4 @@
-extends "res://addons/godot_core_system/source/manager_base.gd"
+extends Node
 
 ## 资源管理器
 ## 负责管理资源的加载，缓存和对象池

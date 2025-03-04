@@ -1,4 +1,4 @@
-extends "res://addons/godot_core_system/source/manager_base.gd"
+extends Node
 
 ## 音频类型枚举
 enum AudioType {
@@ -28,9 +28,9 @@ var _audio_cache: Dictionary = {}
 ## 音量设置
 var _volumes: Dictionary = {}
 
-func _init(data : Dictionary = {}):
+func _ready() -> void:
 	# 设置默认值
-	audio_node_root = data.get("audio_node_root", null)
+	audio_node_root = self
 	_setup_audio_buses()
 	
 	for type in AudioType.values():

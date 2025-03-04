@@ -1,4 +1,4 @@
-extends "res://addons/godot_core_system/source/manager_base.gd"
+extends Node
 
 ## 事件优先级枚举
 enum Priority {

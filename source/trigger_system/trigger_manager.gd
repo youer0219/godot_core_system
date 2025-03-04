@@ -1,4 +1,4 @@
-extends "res://addons/godot_core_system/source/manager_base.gd"
+extends Node
 
 ## 触发器集
 @export_storage var _triggers : Dictionary[StringName, Array]

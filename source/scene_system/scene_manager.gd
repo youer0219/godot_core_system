@@ -1,4 +1,4 @@
-extends "res://addons/godot_core_system/source/manager_base.gd"
+extends Node
 
 ## 场景管理器
 
@@ -27,6 +27,7 @@ var _transition_layer: CanvasLayer
 var _transition_rect: ColorRect
 ## 场景栈
 var _scene_stack: Array[Dictionary] = []
+
 ## 资源管理器
 var _resource_manager : CoreSystem.ResourceManager:
 	get:
@@ -35,10 +36,12 @@ var _resource_manager : CoreSystem.ResourceManager:
 var _logger : CoreSystem.Logger:
 	get:
 		return CoreSystem.logger
+
 var _preloaded_scenes: Array[String] = []
 
-func _init(data: Dictionary = {}):
-	var root : Window = data.get("root", null)
+
+func _ready() -> void:
+	var root : Window = get_tree().root
 	if not root:
 		return
 	_setup_transition_layer(root)
@@ -116,7 +119,7 @@ func add_sub_scene(
 		parent_node: Node, 
 		scene_path: String, 
 		scene_data: Dictionary = {}) -> Node:
-	var scene_resource = CoreSystem.resource_manager.load_resource(scene_path)
+	var scene_resource = _resource_manager.load_resource(scene_path)
 	var sub_scene = scene_resource.instantiate()
 	if sub_scene.has_method("init_state"):
 		sub_scene.init_state(scene_data)
@@ -142,7 +145,7 @@ func _start_transition(effect: TransitionEffect, duration: float) -> void:
 	match effect:
 		TransitionEffect.FADE:
 			# 淡入淡出
-			var tween = CoreSystem.create_tween()
+			var tween = create_tween()
 			tween.tween_property(_transition_rect, "color:a", 1.0, duration)
 			await tween.finished
 		
@@ -150,14 +153,14 @@ func _start_transition(effect: TransitionEffect, duration: float) -> void:
 			# 滑动
 			_transition_rect.color.a = 1.0
 			_transition_rect.position.x = -_transition_rect.size.x
-			var tween = CoreSystem.create_tween()
+			var tween = create_tween()
 			tween.tween_property(_transition_rect, "position:x", 0, duration)
 			await tween.finished
 		
 		TransitionEffect.DISSOLVE:
 			# 溶解
 			#TODO 这里可以添加更复杂的溶解效果
-			var tween = CoreSystem.create_tween()
+			var tween = create_tween()
 			tween.tween_property(_transition_rect, "color:a", 1.0, duration)
 			await tween.finished
 
@@ -168,19 +171,19 @@ func _end_transition(effect: TransitionEffect, duration: float) -> void:
 	match effect:
 		TransitionEffect.FADE:
 			## 淡出
-			var tween = CoreSystem.create_tween()
+			var tween = create_tween()
 			tween.tween_property(_transition_rect, "color:a", 0.0, duration)
 			await tween.finished
 		
 		TransitionEffect.SLIDE:
 			## 滑动
-			var tween = CoreSystem.create_tween()
+			var tween = create_tween()
 			tween.tween_property(_transition_rect, "position:x", _transition_rect.size.x, duration)
 			await tween.finished
 		
 		TransitionEffect.DISSOLVE:
 			## 溶解
-			var tween = CoreSystem.create_tween()
+			var tween = create_tween()
 			tween.tween_property(_transition_rect, "color:a", 0.0, duration)
 			await tween.finished
 	
@@ -190,7 +193,7 @@ func _end_transition(effect: TransitionEffect, duration: float) -> void:
 func _setup_transition_layer(root: Window):
 	_transition_layer = CanvasLayer.new()
 	_transition_layer.layer = 128
-	CoreSystem.add_child(_transition_layer)
+	add_child(_transition_layer)
 	
 	_transition_rect = ColorRect.new()
 	_transition_rect.color = Color(0, 0, 0, 0)
@@ -203,7 +206,7 @@ func _setup_transition_layer(root: Window):
 ## 设置转场矩形大小
 func _on_viewport_size_changed():
 	if _transition_rect:
-		_transition_rect.size = CoreSystem.get_viewport().get_visible_rect().size
+		_transition_rect.size = get_viewport().get_visible_rect().size
 
 ## 私有方法：执行场景切换
 ## [param new_scene] 新场景
@@ -234,7 +237,7 @@ func _do_scene_switch(
 			_current_scene.queue_free()
 
 	# 添加新场景
-	CoreSystem.get_tree().root.call_deferred("add_child", new_scene)
+	get_tree().root.call_deferred("add_child", new_scene)
 	#CoreSystem.get_tree().current_scene = new_scene
 	_current_scene = new_scene
 		

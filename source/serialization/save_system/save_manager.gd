@@ -1,4 +1,4 @@
-extends "res://addons/godot_core_system/source/manager_base.gd"
+extends Node
 
 ## 存档管理器，负责存档的创建、加载、删除等操作
 
@@ -40,6 +40,7 @@ var auto_save_enabled: bool:
 
 ## 当前存档
 var _current_save: GameStateData = null
+
 ## 异步IO管理器
 var _io_manager: CoreSystem.AsyncIOManager:
 	get:
@@ -70,7 +71,7 @@ func create_save(save_name: String, callback: Callable = func(_success: bool): p
 	_current_save = GameStateData.new(save_name)
 	
 	# 收集所有可序列化组件的数据
-	var serializable_nodes = CoreSystem.get_tree().get_nodes_in_group(SerializableComponent.GROUP_NAME)
+	var serializable_nodes = get_tree().get_nodes_in_group(SerializableComponent.GROUP_NAME)
 	var serialized_data = {}
 	for node in serializable_nodes:
 		if node is SerializableComponent:
@@ -112,7 +113,7 @@ func load_save(save_name: String, callback: Callable = func(_success: bool): pas
 				# 恢复所有可序列化组件的数据
 				var serialized_data = _current_save.get_data("nodes", {})
 				for node_path in serialized_data.keys():
-					var node = CoreSystem.get_node_or_null(node_path)
+					var node = get_node_or_null(node_path)
 					if node is SerializableComponent:
 						node.deserialize(serialized_data[node_path])
 				

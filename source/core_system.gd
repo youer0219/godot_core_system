@@ -2,8 +2,6 @@ extends Node
 
 ## 
 
-const ManagerBase = preload("res://addons/godot_core_system/source/manager_base.gd")
-
 const AudioManager = preload("res://addons/godot_core_system/source/audio_system/audio_manager.gd")
 const EventBus = preload("res://addons/godot_core_system/source/event_system/event_bus.gd")
 const InputManager = preload("res://addons/godot_core_system/source/input_system/input_manager.gd")
@@ -53,7 +51,7 @@ var resource_manager : ResourceManager:
 ## 场景管理器
 var scene_manager : SceneManager:
 	get:
-		return get_module("scene_manager", {"root" : get_tree().root})
+		return get_module("scene_manager")
 	set(value):
 		push_error("scene_manager is read-only")
 ## 时间管理器
@@ -100,7 +98,7 @@ var trigger_manager : TriggerManager:
 		push_error("trigger_manager is read-only")
 
 ## 模块实例
-var _modules: Dictionary[StringName, ManagerBase] = {}
+var _modules: Dictionary[StringName, Node] = {}
 var _module_scripts: Dictionary[StringName, Script] = {
 	"audio_manager": AudioManager,
 	"event_bus": EventBus,
@@ -117,22 +115,14 @@ var _module_scripts: Dictionary[StringName, Script] = {
 	"trigger_manager": TriggerManager
 }
 
-func _process(delta: float) -> void:
-	for module in _modules.values():
-		module._process(delta)
-
-func _input(event: InputEvent) -> void:
-	for module in _modules.values():
-		module._input(event)
-
 ## 获取模块
-func get_module(module_id: StringName, data : Dictionary = {}) -> ManagerBase:
+func get_module(module_id: StringName, data : Dictionary = {}) -> Node:
 	if not _modules.has(module_id):
 		if is_module_enabled(module_id):
-			var module : ManagerBase = _create_module(module_id, data)
+			var module : Node = _create_module(module_id, data)
 			_modules[module_id] = module
 		else:
-			push_error("模块未启用：" + module_id)
+			logger.warning("模块未启用：" + module_id)
 			return null
 	return _modules[module_id]
 
@@ -145,7 +135,7 @@ func is_module_enabled(module_id: StringName) -> bool:
 	return ProjectSettings.get_setting(setting_name, true)
 
 ## 创建模块实例
-func _create_module(module_id: StringName, data: Dictionary = {}) -> ManagerBase:
+func _create_module(module_id: StringName, data: Dictionary = {}) -> Node:
 	var script = _module_scripts[module_id]
 	if not script:
 		push_error("无法加载模块脚本：" + module_id)
@@ -156,5 +146,6 @@ func _create_module(module_id: StringName, data: Dictionary = {}) -> ManagerBase
 		push_error("无法创建模块实例：" + module_id)
 		return null
 	_modules[module_id] = module
-	module.call("_ready")
+	module.name = module_id
+	add_child(module)
 	return module

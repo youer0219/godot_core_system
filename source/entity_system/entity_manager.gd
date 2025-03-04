@@ -1,5 +1,4 @@
-extends "res://addons/godot_core_system/source/manager_base.gd"
-#class_name EntityManager
+extends Node
 
 ## 实体管理器
 ## 负责管理实体的生命周期和资源加载
