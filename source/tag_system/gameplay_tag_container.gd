@@ -3,7 +3,7 @@ extends Resource
 class_name GameplayTagContainer
 
 ## 标签列表
-var tags: Array[GameplayTag] = []
+var _tags: Array[GameplayTag] = []
 
 ## 当添加标签时发出
 signal tag_added(tag: GameplayTag)
@@ -25,7 +25,7 @@ func add_tag(tag) -> void:
 		tag_obj = tag
 	
 	if not has_tag(tag_obj):
-		tags.append(tag_obj)
+		_tags.append(tag_obj)
 		emit_signal("tag_added", tag_obj)
 
 ## 移除标签
@@ -40,8 +40,8 @@ func remove_tag(tag) -> void:
 	else:
 		tag_obj = tag
 	
-	if tags.has(tag_obj):
-		tags.erase(tag_obj)
+	if _tags.has(tag_obj):
+		_tags.erase(tag_obj)
 		emit_signal("tag_removed", tag_obj)
 
 ## 是否有指定标签
@@ -56,7 +56,7 @@ func has_tag(tag, exact: bool = true) -> bool:
 	else:
 		tag_obj = tag
 		
-	for existing_tag in tags:
+	for existing_tag in _tags:
 		if existing_tag.matches(tag_obj, exact):
 			return true
 	return false
@@ -80,7 +80,7 @@ func has_any_tags(required_tags: Array, exact: bool = true) -> bool:
 ## 获取所有标签(包括子标签)
 func get_all_tags() -> Array[GameplayTag]:
 	var result: Array[GameplayTag] = []
-	for tag in tags:
+	for tag in _tags:
 		result.append(tag)
 		result.append_array(tag.get_all_children())
 	return result
