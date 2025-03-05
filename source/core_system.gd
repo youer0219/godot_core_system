@@ -1,6 +1,5 @@
 extends Node
 
-## 
 
 const AudioManager = preload("res://addons/godot_core_system/source/audio_system/audio_manager.gd")
 const EventBus = preload("res://addons/godot_core_system/source/event_system/event_bus.gd")
@@ -125,7 +124,7 @@ var _module_scripts: Dictionary[StringName, Script] = {
 
 ## 检查模块是否启用
 func is_module_enabled(module_id: StringName) -> bool:
-	var setting_name = "godot_ui_framework/modules/" + module_id + "/enabled"
+	var setting_name = "godot_core_system/module_enable/" + module_id
 	# 如果设置不存在，默认为启用
 	if not ProjectSettings.has_setting(setting_name):
 		return true
@@ -137,7 +136,7 @@ func _create_module(module_id: StringName, data: Dictionary = {}) -> Node:
 	if not script:
 		push_error("无法加载模块脚本：" + module_id)
 		return null
-	
+
 	var module = script.new(data)
 	if not module:
 		push_error("无法创建模块实例：" + module_id)

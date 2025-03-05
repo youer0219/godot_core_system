@@ -6,11 +6,11 @@ extends Node
 const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
 
 ## 项目设置路径常量
-const SETTING_SAVE_DIR = "core_system/save_system/save_directory"
-const SETTING_SAVE_EXT = "core_system/save_system/save_extension"
-const SETTING_AUTO_SAVE_INTERVAL = "core_system/save_system/auto_save_interval"
-const SETTING_MAX_AUTO_SAVES = "core_system/save_system/max_auto_saves"
-const SETTING_AUTO_SAVE_ENABLED = "core_system/save_system/auto_save_enabled"
+const SETTING_SAVE_DIR = "godot_core_system/save_system/save_directory"
+const SETTING_SAVE_EXT = "godot_core_system/save_system/save_extension"
+const SETTING_AUTO_SAVE_INTERVAL = "godot_core_system/save_system/auto_save_interval"
+const SETTING_MAX_AUTO_SAVES = "godot_core_system/save_system/max_auto_saves"
+const SETTING_AUTO_SAVE_ENABLED = "godot_core_system/save_system/auto_save_enabled"
 
 
 ## 存档目录
@@ -69,7 +69,7 @@ func _process(delta: float) -> void:
 ## [param callback] 回调函数，用于通知创建结果
 func create_save(save_name: String, callback: Callable = func(_success: bool): pass) -> void:
 	_current_save = GameStateData.new(save_name)
-	
+
 	# 收集所有可序列化组件的数据
 	var serializable_nodes = get_tree().get_nodes_in_group(SerializableComponent.GROUP_NAME)
 	var serialized_data = {}
@@ -77,9 +77,9 @@ func create_save(save_name: String, callback: Callable = func(_success: bool): p
 		if node is SerializableComponent:
 			var node_path = str(node.get_path())
 			serialized_data[node_path] = node.serialize()
-	
+
 	_current_save.set_data("nodes", serialized_data)
-	
+
 	# 保存到文件
 	var save_path = _get_save_path(save_name)
 	_io_manager.write_file_async(
@@ -99,7 +99,7 @@ func create_save(save_name: String, callback: Callable = func(_success: bool): p
 ## [param callback] 回调函数,用于通知加载结果
 func load_save(save_name: String, callback: Callable = func(_success: bool): pass) -> void:
 	var save_path = _get_save_path(save_name)
-	
+
 	_io_manager.read_file_async(
 		save_path,
 		true,
@@ -109,14 +109,14 @@ func load_save(save_name: String, callback: Callable = func(_success: bool): pas
 			if success:
 				_current_save = GameStateData.new()
 				_current_save.deserialize(result)
-				
+
 				# 恢复所有可序列化组件的数据
 				var serialized_data = _current_save.get_data("nodes", {})
 				for node_path in serialized_data.keys():
 					var node = get_node_or_null(node_path)
 					if node is SerializableComponent:
 						node.deserialize(serialized_data[node_path])
-				
+
 				save_loaded.emit(save_name)
 			callback.call(success)
 	)
@@ -126,7 +126,7 @@ func load_save(save_name: String, callback: Callable = func(_success: bool): pas
 ## [param callback] 回调函数
 func delete_save(save_name: String, callback: Callable = func(_success: bool): pass) -> void:
 	var save_path = _get_save_path(save_name)
-	
+
 	_io_manager.delete_file_async(
 		save_path,
 		func(success: bool, _result: Variant):
@@ -141,10 +141,10 @@ func delete_save(save_name: String, callback: Callable = func(_success: bool): p
 func create_auto_save() -> void:
 	if not _current_save:
 		return
-	
+
 	var timestamp = Time.get_unix_time_from_system()
 	var auto_save_name = "auto_save_%d" % timestamp
-	
+
 	create_save(auto_save_name, func(success: bool):
 		if success:
 			auto_save_created.emit()
@@ -175,11 +175,11 @@ func get_current_save() -> GameStateData:
 ## 清理旧的自动存档
 func _clean_old_auto_saves() -> void:
 	get_save_list(func(saves: Array):
-		var auto_saves = saves.filter(func(save_name: String): 
+		var auto_saves = saves.filter(func(save_name: String):
 			return save_name.begins_with("auto_save_")
 		)
 		auto_saves.sort()
-		
+
 		while auto_saves.size() > max_auto_saves:
 			var old_save = auto_saves.pop_front()
 			delete_save(old_save)
@@ -196,7 +196,7 @@ func _get_save_path(save_name: String) -> String:
 func _update_auto_save(delta: float) -> void:
 	if not auto_save_enabled or _current_save == null:
 		return
-	
+
 	_auto_save_timer += delta
 	if _auto_save_timer >= auto_save_interval:
 		_auto_save_timer = 0

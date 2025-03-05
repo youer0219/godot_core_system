@@ -10,20 +10,23 @@ signal config_saved
 ## 配置重置
 signal config_reset
 
+const SETTING_CONFIG_PATH: String = "godot_core_system/config_system/config_path"
+const SETTING_AUTO_SAVE: String = "godot_core_system/config_system/auto_save"
+
 const DefaultConfig = preload("res://addons/godot_core_system/source/serialization/config_system/default_config.gd")
 const AsyncIOManager = preload("res://addons/godot_core_system/source/serialization/io_system/async_io_manager.gd")
 
 ## 配置文件路径
 @export var config_path: String:
 	get:
-		return ProjectSettings.get_setting("core_system/config_system/config_path", "user://config.cfg")
+		return ProjectSettings.get_setting(SETTING_CONFIG_PATH, "user://config.cfg")
 	set(value):
 		config_path = value
 
 ## 是否自动保存
 @export var auto_save: bool:
 	get:
-		return ProjectSettings.get_setting("core_system/config_system/auto_save", true)
+		return ProjectSettings.get_setting(SETTING_AUTO_SAVE, true)
 	set(value):
 		auto_save = value
 
@@ -86,7 +89,7 @@ func reset_config(callback: Callable = func(_success: bool): pass) -> void:
 	_config = DefaultConfig.get_default_config()
 	_modified = true
 	config_reset.emit()
-	
+
 	if auto_save:
 		save_config(callback)
 	else:
@@ -101,7 +104,7 @@ func set_value(section: String, key: String, value: Variant) -> void:
 		_config[section] = {}
 	_config[section][key] = value
 	_modified = true
-	
+
 	if auto_save:
 		save_config()
 
@@ -113,12 +116,12 @@ func set_value(section: String, key: String, value: Variant) -> void:
 func get_value(section: String, key: String, default_value: Variant = null) -> Variant:
 	if _config.has(section) and _config[section].has(key):
 		return _config[section][key]
-	
+
 	# 从默认配置获取
 	var default_config = DefaultConfig.get_default_config()
 	if default_config.has(section) and default_config[section].has(key):
 		return default_config[section][key]
-	
+
 	return default_value
 
 ## 删除配置值
@@ -128,7 +131,7 @@ func erase_value(section: String, key: String) -> void:
 	if _config.has(section):
 		_config[section].erase(key)
 		_modified = true
-		
+
 		if auto_save:
 			save_config()
 
