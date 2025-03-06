@@ -11,7 +11,7 @@ func _ready():
 	config_manager.config_loaded.connect(_on_config_loaded)
 	config_manager.config_saved.connect(_on_config_saved)
 	config_manager.config_reset.connect(_on_config_reset)
-	
+
 	# 加载配置
 	status_label.text = "正在加载配置..."
 	config_manager.load_config(func(success: bool):
@@ -27,13 +27,13 @@ func _update_config_tree():
 	config_tree.clear()
 	var root = config_tree.create_item()
 	root.set_text(0, "配置")
-	
+
 	# 遍历所有配置段
 	for section in ["game", "graphics", "audio", "input", "gameplay", "accessibility", "debug"]:
 		var section_data = config_manager.get_section(section)
 		var section_item = config_tree.create_item(root)
 		section_item.set_text(0, section)
-		
+
 		# 遍历配置段中的所有键值对
 		for key in section_data:
 			var value_item = config_tree.create_item(section_item)
@@ -45,7 +45,7 @@ func _on_modify_button_pressed():
 	config_manager.set_value("graphics", "fullscreen", true)
 	config_manager.set_value("audio", "master_volume", 0.5)
 	config_manager.set_value("gameplay", "show_damage_numbers", false)
-	
+
 	status_label.text = "配置已修改"
 	_update_config_tree()
 

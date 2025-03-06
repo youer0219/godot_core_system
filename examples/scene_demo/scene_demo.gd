@@ -17,13 +17,13 @@ func _ready():
 	# 预加载所有场景
 	for path in SCENE_PATHS.values():
 		scene_manager.preload_scene(path)
-	
+
 	# 连接信号
 	scene_manager.scene_loading_started.connect(_on_scene_loading_started)
 	scene_manager.scene_loading_progress.connect(_on_scene_loading_progress)
 	scene_manager.scene_changed.connect(_on_scene_changed)
 	scene_manager.scene_loading_finished.connect(_on_scene_loading_finished)
-	
+
 	# 设置状态标签
 	status_label.text = "选择一个转场效果和目标场景"
 
@@ -34,7 +34,7 @@ func _on_scene1_pressed():
 ## 切换到场景2（淡入淡出效果）
 func _on_scene2_pressed():
 	scene_manager.change_scene_async(
-		SCENE_PATHS.scene2, 
+		SCENE_PATHS.scene2,
 		SceneManager.TransitionEffect.FADE,
 		1.0
 	)
