@@ -35,14 +35,17 @@ func _on_scene1_pressed():
 func _on_scene2_pressed():
 	scene_manager.change_scene_async(
 		SCENE_PATHS.scene2, 
-		SceneManager.TransitionEffect.FADE,
-		1.0
+		{}, 
+		false, 
+		SceneManager.TransitionEffect.FADE, 
 	)
 
 ## 切换到场景3（滑动效果）
 func _on_scene3_pressed():
 	scene_manager.change_scene_async(
 		SCENE_PATHS.scene3,
+		{}, 
+		false, 
 		SceneManager.TransitionEffect.SLIDE,
 		1.0
 	)
