@@ -22,7 +22,6 @@ func _ready():
 	# 创建一个5秒倒计时
 	time_manager.create_timer(TIMER_IDS.countdown, 5.0, false, 
 		func(): print("倒计时结束！"))
-	
 	# 创建一个2秒循环计时器
 	time_manager.create_timer(TIMER_IDS.loop, 2.0, true,
 		func(): print("循环计时器触发！"))
@@ -53,9 +52,12 @@ func _on_pause_button_pressed():
 
 ## 重置倒计时按钮回调
 func _on_reset_button_pressed():
-	time_manager.reset_timer(TIMER_IDS.countdown)
-	status_label.text = "倒计时已重置"
-
+	var success = time_manager.reset_timer(TIMER_IDS.countdown)
+	if success:
+		status_label.text = "倒计时已重置"
+	else:
+		time_manager.create_timer(TIMER_IDS.countdown, 5.0, false, 
+		func(): print("倒计时结束！"))
 ## 时间缩放变化回调
 func _on_time_scale_changed(new_scale: float):
 	status_label.text = "时间缩放已更改为：%.1fx" % new_scale
