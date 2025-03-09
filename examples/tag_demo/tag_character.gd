@@ -22,12 +22,3 @@ func has_tag(tag: String, exact: bool = true) -> bool:
 ## 获取所有标签
 func get_tags() -> Array:
 	return tag_container.get_tags()
-
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
