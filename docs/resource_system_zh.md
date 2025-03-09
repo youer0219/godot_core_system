@@ -16,6 +16,7 @@
 ### ResourceManager（资源管理器）
 
 所有资源操作的中央管理器：
+
 - 资源加载和缓存
 - 引用计数
 - 内存管理
@@ -29,10 +30,10 @@ core_system/resource_system/cleanup_interval = 300
 # 使用示例
 func _ready() -> void:
     var resource_manager = CoreSystem.resource_manager
-    
+
     # 加载资源
     var texture = resource_manager.load("res://assets/textures/player.png")
-    
+
     # 异步加载
     resource_manager.load_async("res://assets/models/enemy.tscn",
         func(resource): setup_enemy(resource)
@@ -47,11 +48,11 @@ func _ready() -> void:
 # 同步加载
 func load_player_resources() -> void:
     var resource_manager = CoreSystem.resource_manager
-    
+
     var texture = resource_manager.load("res://assets/textures/player.png")
     var animation = resource_manager.load("res://assets/animations/player.tres")
     var sound = resource_manager.load("res://assets/sounds/footstep.wav")
-    
+
     setup_player(texture, animation, sound)
 ```
 
@@ -61,14 +62,14 @@ func load_player_resources() -> void:
 # 带回调的异步加载
 func load_level_async() -> void:
     var resource_manager = CoreSystem.resource_manager
-    
+
     # 加载多个资源
     resource_manager.load_multiple_async([
         "res://assets/levels/level1.tscn",
         "res://assets/textures/background.png",
         "res://assets/music/level1_theme.ogg"
     ], func(resources): setup_level(resources))
-    
+
     # 加载单个资源
     resource_manager.load_async("res://assets/models/enemy.tscn",
         func(resource): spawn_enemy(resource)
@@ -81,13 +82,13 @@ func load_level_async() -> void:
 # 资源引用管理
 func manage_resources() -> void:
     var resource_manager = CoreSystem.resource_manager
-    
+
     # 添加引用
     resource_manager.add_reference("res://assets/textures/player.png")
-    
+
     # 移除引用
     resource_manager.remove_reference("res://assets/textures/player.png")
-    
+
     # 清理未使用的资源
     resource_manager.cleanup_unused()
 ```
@@ -95,11 +96,13 @@ func manage_resources() -> void:
 ## 最佳实践
 
 1. **资源组织**
+
    - 使用清晰的文件夹结构
    - 遵循一致的命名约定
    - 对相关资源进行分组
 
 2. **性能**
+
    - 预加载常用资源
    - 对大型资源使用异步加载
    - 实现适当的引用计数
@@ -111,7 +114,8 @@ func manage_resources() -> void:
 
 ## API 参考
 
-### ResourceManager（资源管理器）
+### 资源管理器 ResourceManager
+
 - `load(path: String) -> Resource`: 同步加载资源
 - `load_async(path: String, callback: Callable) -> void`: 异步加载资源
 - `load_multiple_async(paths: Array, callback: Callable) -> void`: 加载多个资源

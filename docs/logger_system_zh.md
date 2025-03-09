@@ -16,6 +16,7 @@
 ### Logger（日志记录器）
 
 中央日志设施：
+
 - 日志级别管理
 - 通道配置
 - 消息格式化
@@ -30,7 +31,7 @@ core_system/logger/max_log_files = 5
 # 使用示例
 func _ready() -> void:
     var logger = CoreSystem.logger
-    
+
     # 记录日志
     logger.debug("正在初始化游戏...")
     logger.info("游戏已启动")
@@ -46,7 +47,7 @@ func _ready() -> void:
 # 不同日志级别
 func example_logging() -> void:
     var logger = CoreSystem.logger
-    
+
     logger.debug("调试消息")     # 用于调试的详细信息
     logger.info("信息消息")      # 一般信息
     logger.warning("警告消息")   # 不会停止执行的警告
@@ -60,13 +61,13 @@ func example_logging() -> void:
 # 为日志添加上下文
 func player_action() -> void:
     var logger = CoreSystem.logger
-    
+
     logger.with_context({
         "player_id": "player_1",
         "position": Vector2(100, 100),
         "health": 100
     }).info("玩家执行动作")
-    
+
     # 带类别的日志
     logger.category("combat").info("玩家攻击敌人")
 ```
@@ -77,15 +78,15 @@ func player_action() -> void:
 # 配置日志记录器
 func setup_logger() -> void:
     var logger = CoreSystem.logger
-    
+
     # 设置日志级别
     logger.set_level(Logger.LEVEL.DEBUG)
-    
+
     # 添加自定义通道
     logger.add_channel("analytics", func(message):
         send_to_analytics_service(message)
     )
-    
+
     # 配置文件日志
     logger.configure_file_logging("user://logs", 5)
 ```
@@ -93,11 +94,13 @@ func setup_logger() -> void:
 ## 最佳实践
 
 1. **日志组织**
+
    - 使用适当的日志级别
    - 添加相关上下文
    - 使用类别进行过滤
 
 2. **性能**
+
    - 在生产环境中避免过多的调试日志
    - 对复杂的日志消息使用延迟求值
    - 配置适当的日志轮转
@@ -109,7 +112,8 @@ func setup_logger() -> void:
 
 ## API 参考
 
-### Logger（日志记录器）
+### Logger（日志记录器）（中文名称：日志记录器 Logger）
+
 - `debug(message: String) -> void`: 记录调试消息
 - `info(message: String) -> void`: 记录信息消息
 - `warning(message: String) -> void`: 记录警告消息
@@ -124,6 +128,7 @@ func setup_logger() -> void:
 - `flush() -> void`: 刷新日志缓冲区
 
 ### 日志级别
+
 ```gdscript
 enum LEVEL {
     DEBUG = 0,  # 调试

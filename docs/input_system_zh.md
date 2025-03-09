@@ -16,6 +16,7 @@
 ### InputManager（输入管理器）
 
 所有输入操作的中央管理器：
+
 - 输入动作映射
 - 输入状态跟踪
 - 上下文管理
@@ -29,13 +30,13 @@ core_system/input_system/double_tap_time = 0.3
 # 使用示例
 func _ready() -> void:
     var input = CoreSystem.input_manager
-    
+
     # 注册输入动作
     input.register_action("attack", {
         "keyboard": KEY_SPACE,
         "gamepad": JOY_BUTTON_X
     })
-    
+
     # 检查输入状态
     if input.is_action_just_pressed("attack"):
         perform_attack()
@@ -49,13 +50,13 @@ func _ready() -> void:
 # 检查输入
 func _process(delta: float) -> void:
     var input = CoreSystem.input_manager
-    
+
     if input.is_action_pressed("move_right"):
         move_right()
-    
+
     if input.is_action_just_pressed("jump"):
         jump()
-    
+
     if input.is_action_just_released("crouch"):
         stand_up()
 ```
@@ -66,13 +67,13 @@ func _process(delta: float) -> void:
 # 注册新的输入动作
 func setup_controls() -> void:
     var input = CoreSystem.input_manager
-    
+
     input.register_action("special_attack", {
         "keyboard": KEY_Q,
         "gamepad": JOY_BUTTON_Y,
         "mouse": MOUSE_BUTTON_RIGHT
     })
-    
+
     # 重新映射现有动作
     input.remap_action("jump", "keyboard", KEY_SPACE)
 ```
@@ -83,7 +84,7 @@ func setup_controls() -> void:
 # 设置输入上下文
 func setup_input_contexts() -> void:
     var input = CoreSystem.input_manager
-    
+
     # 菜单上下文
     input.add_context("menu", {
         "ui_up": true,
@@ -91,14 +92,14 @@ func setup_input_contexts() -> void:
         "ui_accept": true,
         "ui_cancel": true
     })
-    
+
     # 游戏上下文
     input.add_context("gameplay", {
         "move": true,
         "jump": true,
         "attack": true
     })
-    
+
     # 切换上下文
     input.switch_context("menu")
 ```
@@ -106,14 +107,16 @@ func setup_input_contexts() -> void:
 ## 最佳实践
 
 1. **输入组织**
+
    - 使用清晰的动作名称
    - 在上下文中分组相关动作
    - 考虑多种输入方式
 
 2. **性能**
+
    - 使用输入缓冲处理复杂组合
    - 清理未使用的输入映射
-   - 优化 _process 中的输入检查
+   - 优化 \_process 中的输入检查
 
 3. **用户体验**
    - 支持输入重映射
@@ -122,7 +125,8 @@ func setup_input_contexts() -> void:
 
 ## API 参考
 
-### InputManager（输入管理器）
+### 输入管理器 InputManager
+
 - `register_action(name: String, mappings: Dictionary) -> void`: 注册新的输入动作
 - `remap_action(action: String, device: String, key: int) -> void`: 重新映射现有动作
 - `remove_action(name: String) -> void`: 移除输入动作

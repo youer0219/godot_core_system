@@ -16,6 +16,7 @@
 ### AudioManager（音频管理器）
 
 所有音频操作的中央管理器：
+
 - 基于分类的音频管理
 - 音量控制
 - 音频状态处理
@@ -30,13 +31,13 @@ core_system/audio_system/voice_volume = 1.0
 # 使用示例
 func _ready() -> void:
     var audio = CoreSystem.audio_manager
-    
+
     # 播放音乐（带淡入淡出）
     audio.play_music("res://assets/music/battle_theme.ogg", 2.0)
-    
+
     # 播放音效
     audio.play_sfx("res://assets/sfx/explosion.wav")
-    
+
     # 设置分类音量
     audio.set_category_volume("music", 0.8)
 ```
@@ -81,7 +82,7 @@ func toggle_sfx(enabled: bool) -> void:
 # 改变音频状态（例如，进入战斗时）
 func enter_battle() -> void:
     CoreSystem.audio_manager.transition_to_state("battle", 2.0)
-    
+
 # 定义状态行为
 func _setup_audio_states() -> void:
     var audio = CoreSystem.audio_manager
@@ -98,11 +99,13 @@ func _setup_audio_states() -> void:
 ## 最佳实践
 
 1. **音频组织**
+
    - 使用清晰的分类名称
    - 保持一致的文件命名约定
    - 在专用文件夹中组织音频资源
 
 2. **性能**
+
    - 对频繁播放的声音使用音频池
    - 限制同时播放的音频流
    - 清理未使用的音频资源
@@ -114,7 +117,8 @@ func _setup_audio_states() -> void:
 
 ## API 参考
 
-### AudioManager（音频管理器）
+### 音频管理器 AudioManager
+
 - `play_music(stream_path: String, fade_time: float = 0.0) -> void`: 播放背景音乐
 - `play_sfx(stream_path: String, volume: float = 1.0) -> void`: 播放音效
 - `play_voice(stream_path: String, volume: float = 1.0) -> void`: 播放语音

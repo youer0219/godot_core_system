@@ -30,6 +30,8 @@ A highly modular and extensible core system framework designed for Godot 4.4+
 - 📝 **Logger System** - Detailed logging system with multiple output channels
 - 🎨 **Resource System** - Efficient resource loading and management
 - 🎬 **Scene System** - Scene transition and management made easy
+- 🏷️ **Tag System** - Flexible object tagging and categorization system
+- 🔄 **Trigger System** - Event-driven trigger system with conditions and actions
 - 🔧 **Plugin Architecture** - Easy to extend and customize
 - 📱 **Project Settings Integration** - Configure all systems through Godot's project settings
 - 🛠️ **Development Tools** - Built-in debugging and development tools
@@ -64,21 +66,27 @@ func _ready():
     CoreSystem.logger               # Logger
     CoreSystem.resource_manager     # Resource Manager
     CoreSystem.scene_manager        # Scene Manager
+    CoreSystem.tag_manager         # Tag Manager
+    CoreSystem.trigger_manager     # Trigger Manager
 ```
 
 ## 📚 Documentation
 
 Detailed documentation for each system:
 
-| System               | Description                           | Documentation                                |
-| -------------------- | ------------------------------------- | -------------------------------------------- |
-| State Machine System | Game state management and transitions | [View Docs](docs/state_machine_system_en.md) |
-| Serialization System | Game save and config management       | [View Docs](docs/serialization_system_en.md) |
-| Audio System         | Sound and music management            | [View Docs](docs/audio_system_en.md)         |
-| Input System         | Input control and event handling      | [View Docs](docs/input_system_en.md)         |
-| Logger System        | Logging and debugging                 | [View Docs](docs/logger_system_en.md)        |
-| Resource System      | Resource loading and management       | [View Docs](docs/resource_system_en.md)      |
-| Scene System         | Scene switching and management        | [View Docs](docs/scene_system_en.md)         |
+| System               | Description                           | Documentation                             |
+| -------------------- | ------------------------------------- | ----------------------------------------- |
+| State Machine System | Game state management and transitions | [View Docs](docs/state_machine_system.md) |
+| Serialization System | Game save and config management       | [View Docs](docs/serialization_system.md) |
+| Audio System         | Sound and music management            | [View Docs](docs/audio_system.md)         |
+| Input System         | Input control and event handling      | [View Docs](docs/input_system.md)         |
+| Logger System        | Logging and debugging                 | [View Docs](docs/logger_system.md)        |
+| Resource System      | Resource loading and management       | [View Docs](docs/resource_system.md)      |
+| Scene System         | Scene switching and management        | [View Docs](docs/scene_system.md)         |
+| Tag System           | Object tagging and categorization     | [View Docs](docs/tag_system.md)           |
+| Trigger System       | Event-driven triggers and conditions  | [View Docs](docs/trigger_system.md)       |
+| Config System        | Configuration management              | [View Docs](docs/config_system.md)        |
+| Save System          | Game save management                  | [View Docs](docs/save_system.md)          |
 
 ## 🌟 Example Project
 
