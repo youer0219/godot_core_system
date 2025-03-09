@@ -18,9 +18,9 @@ class ExampleGameStateMachine extends BaseStateMachine:
 	
 	func _ready() -> void:
 		# 添加主要状态
-		add_state(&"menu", MenuState.new(self))
-		add_state(&"gameplay", GameplayState.new(self))
-		add_state(&"pause", PauseState.new(self))
+		add_state(&"menu", MenuState.new())
+		add_state(&"gameplay", GameplayState.new())
+		add_state(&"pause", PauseState.new())
 	
 	## 菜单状态
 	class MenuState extends BaseState:
@@ -35,9 +35,9 @@ class ExampleGameStateMachine extends BaseStateMachine:
 	class GameplayState extends BaseStateMachine:
 		func _ready() -> void:
 			# 添加子状态
-			add_state(&"explore", ExploreState.new(self))		# 添加探索状态
-			add_state(&"battle", BattleState.new(self))		# 添加战斗状态
-			add_state(&"dialog", DialogState.new(self))		# 添加对话状态
+			add_state(&"explore", ExploreState.new())		# 添加探索状态
+			add_state(&"battle", BattleState.new())		# 添加战斗状态
+			add_state(&"dialog", DialogState.new())		# 添加对话状态
 			print("gameplay state ready")
 		
 		func _enter(msg := {}) -> void:
@@ -101,8 +101,8 @@ class ExampleGameStateMachine extends BaseStateMachine:
 
 func _ready() -> void:
 	# 创建并注册主状态机
-	var game_state_machine = ExampleGameStateMachine.new(null, self)
-	state_machine_manager.register_state_machine(&"game", game_state_machine, &"menu")
+	var game_state_machine = ExampleGameStateMachine.new()
+	state_machine_manager.register_state_machine(&"game", game_state_machine, null, &"menu")
 	state_machine_manager._ready()
 
 func _process(delta: float) -> void:

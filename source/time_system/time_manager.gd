@@ -1,4 +1,4 @@
-extends Node
+extends "res://addons/godot_core_system/source/manager_base.gd"
 
 signal time_scale_changed(new_scale: float)
 signal timer_completed(timer_id: String)
@@ -81,25 +81,31 @@ func get_game_time() -> float:
 ## 创建计时器
 func create_timer(id: String, duration: float, loop: bool = false, 
 				 callback: Callable = Callable()) -> void:
-	if _timers.has(id):
+	if has_timer(id):
 		push_warning("Timer with id '%s' already exists. Overwriting..." % id)
 	
 	_timers[id] = GameTimer.new(id, duration, loop, callback)
 
 ## 暂停计时器
-func pause_timer(timer_id: String) -> void:
-	if _timers.has(timer_id):
+func pause_timer(timer_id: String) -> bool:
+	if has_timer(timer_id):
 		_timers[timer_id].paused = true
+		return true
+	return false
 
 ## 恢复计时器
-func resume_timer(timer_id: String) -> void:
-	if _timers.has(timer_id):
+func resume_timer(timer_id: String) -> bool:
+	if has_timer(timer_id):
 		_timers[timer_id].paused = false
-
+		return true
+	return false
+	
 ## 重置计时器
-func reset_timer(timer_id: String) -> void:
-	if _timers.has(timer_id):
+func reset_timer(timer_id: String) -> bool:
+	if has_timer(timer_id):
 		_timers[timer_id].elapsed = 0.0
+		return true
+	return false
 
 ## 移除计时器
 func remove_timer(timer_id: String) -> void:
@@ -107,7 +113,7 @@ func remove_timer(timer_id: String) -> void:
 
 ## 获取计时器剩余时间
 func get_timer_remaining(timer_id: String) -> float:
-	if _timers.has(timer_id):
+	if has_timer(timer_id):
 		return max(0.0, _timers[timer_id].duration - _timers[timer_id].elapsed)
 	return 0.0
 
