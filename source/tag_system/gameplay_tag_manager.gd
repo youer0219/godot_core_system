@@ -1,6 +1,4 @@
-@tool
 extends Node
-class_name GameplayTagManager
 
 ## 清理间隔时间(秒)
 const CLEANUP_INTERVAL := 30.0
