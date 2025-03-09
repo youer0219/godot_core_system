@@ -6,11 +6,11 @@ extends Node
 const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
 
 ## 项目设置路径常量
-const SETTING_SAVE_DIR = "godot_core_system/save_system/save_directory"
-const SETTING_SAVE_EXT = "godot_core_system/save_system/save_extension"
-const SETTING_AUTO_SAVE_INTERVAL = "godot_core_system/save_system/auto_save_interval"
-const SETTING_MAX_AUTO_SAVES = "godot_core_system/save_system/max_auto_saves"
-const SETTING_AUTO_SAVE_ENABLED = "godot_core_system/save_system/auto_save_enabled"
+const SETTING_SAVE_DIR = "core_system/save_system/save_directory"
+const SETTING_SAVE_EXT = "core_system/save_system/save_extension"
+const SETTING_AUTO_SAVE_INTERVAL = "core_system/save_system/auto_save_interval"
+const SETTING_MAX_AUTO_SAVES = "core_system/save_system/max_auto_saves"
+const SETTING_AUTO_SAVE_ENABLED = "core_system/save_system/auto_save_enabled"
 
 
 ## 存档目录
@@ -49,6 +49,7 @@ var _io_manager: CoreSystem.AsyncIOManager:
 ## 自动存档计时器
 var _auto_save_timer: float = 0
 
+var _serializable_components : Array[SerializableComponent]
 
 # 信号
 ## 存档创建
@@ -59,10 +60,29 @@ signal save_loaded(save_name: String)
 signal save_deleted(save_name: String)
 ## 自动存档
 signal auto_save_created
+## 自动存档清理完成
+signal auto_save_cleaned
 
 # 每帧判断是否需要自动存档
 func _process(delta: float) -> void:
 	_update_auto_save(delta)
+
+
+## 注册可序列化组件
+func register_serializable_component(component: SerializableComponent) -> void:
+	if _serializable_components.has(component):
+		CoreSystem.logger.warning("Serializable component already registered: " + component.name)
+		return
+	_serializable_components.append(component)
+
+
+## 注销可序列化组件
+func unregister_serializable_component(component: SerializableComponent) -> void:
+	if not _serializable_components.has(component):
+		CoreSystem.logger.warning("Serializable component not registered: " + component.name)
+		return
+	_serializable_components.erase(component)
+
 
 ## 创建存档
 ## [param save_name] 存档名称
@@ -71,9 +91,8 @@ func create_save(save_name: String, callback: Callable = func(_success: bool): p
 	_current_save = GameStateData.new(save_name)
 
 	# 收集所有可序列化组件的数据
-	var serializable_nodes = get_tree().get_nodes_in_group(SerializableComponent.GROUP_NAME)
 	var serialized_data = {}
-	for node in serializable_nodes:
+	for node in _serializable_components:
 		if node is SerializableComponent:
 			var node_path = str(node.get_path())
 			serialized_data[node_path] = node.serialize()
@@ -149,12 +168,16 @@ func create_auto_save() -> void:
 		if success:
 			auto_save_created.emit()
 			# 清理旧的自动存档
-			_clean_old_auto_saves()
+			_clean_old_auto_saves(func():
+				auto_save_cleaned.emit()
+			)
 	)
 
 ## 获取存档列表
 ## [param callback] 回调函数
-func get_save_list(callback: Callable = func(_saves: Array): pass) -> void:
+func get_save_list(callback: Callable = Callable()) -> void:
+	if not callback.is_valid(): 
+		return
 	var saves = []
 	var dir = DirAccess.open(save_directory)
 	if dir:
@@ -173,16 +196,28 @@ func get_current_save() -> GameStateData:
 	return _current_save
 
 ## 清理旧的自动存档
-func _clean_old_auto_saves() -> void:
+## [param callback] 回调函数，在清理完成后调用
+func _clean_old_auto_saves(callback: Callable = Callable()) -> void:
 	get_save_list(func(saves: Array):
 		var auto_saves = saves.filter(func(save_name: String):
 			return save_name.begins_with("auto_save_")
 		)
 		auto_saves.sort()
-
+		
+		var remaining_deletes = auto_saves.size() - max_auto_saves
+		if remaining_deletes <= 0:
+			if callback.is_valid():
+				callback.call()
+			return
+		
+		var deletes_completed = 0
 		while auto_saves.size() > max_auto_saves:
 			var old_save = auto_saves.pop_front()
-			delete_save(old_save)
+			delete_save(old_save, func(success: bool):
+				deletes_completed += 1
+				if deletes_completed >= remaining_deletes and callback.is_valid():
+					callback.call()
+			)
 	)
 
 ## 获取存档路径

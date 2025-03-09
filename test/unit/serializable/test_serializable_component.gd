@@ -55,10 +55,12 @@ func after_each():
 	_test_obj = null
 	await get_tree().process_frame
 
+
 func _on_property_changed(property: String, value: Variant) -> void:
 	_property_changed_count += 1
 	_last_changed_property = property
 	_last_changed_value = value
+
 
 func test_register_property():
 	# 测试注册新属性
@@ -71,6 +73,7 @@ func test_register_property():
 	assert_eq(_property_changed_count, 1)
 	assert_eq(_last_changed_property, "test_prop")
 	assert_eq(_last_changed_value, "new_value")
+
 
 func test_serialize_basic():
 	# 设置基本属性值
@@ -103,12 +106,15 @@ func test_deserialize_basic():
 	assert_eq(_test_obj.get_property("stats"), TEST_DATA.stats)
 
 func test_signals():
-	var serialized_data = null
-	var deserialized_data = null
+	# 使用数组来存储数据，这样可以在闭包中修改
+	var data_store := {
+		"serialized": null,
+		"deserialized": null
+	}
 	
 	# 连接序列化信号
-	_test_obj.serialized.connect(func(data): serialized_data = data)
-	_test_obj.deserialized.connect(func(data): deserialized_data = data)
+	_test_obj.serialized.connect(func(data): data_store.serialized = data)
+	_test_obj.deserialized.connect(func(data): data_store.deserialized = data)
 	
 	# 设置初始数据并序列化
 	_test_obj.set_property("health", 100)
@@ -117,8 +123,8 @@ func test_signals():
 	var data = _test_obj.serialize()
 	
 	# 验证序列化信号
-	assert_not_null(serialized_data, "序列化信号应该被触发")
-	assert_eq(serialized_data, data, "序列化数据应该匹配")
+	assert_not_null(data_store.serialized, "序列化信号应该被触发")
+	assert_eq(data_store.serialized, data, "序列化数据应该匹配")
 	
 	# 反序列化并验证
 	var test_data = {"health": 200}
@@ -126,6 +132,6 @@ func test_signals():
 	await get_tree().process_frame
 	
 	# 验证反序列化信号
-	assert_not_null(deserialized_data, "反序列化信号应该被触发")
-	assert_eq(deserialized_data, test_data, "反序列化数据应该匹配")
+	assert_not_null(data_store.deserialized, "反序列化信号应该被触发")
+	assert_eq(data_store.deserialized, test_data, "反序列化数据应该匹配")
 	assert_eq(_test_obj.get_property("health"), 200, "属性值应该被更新")

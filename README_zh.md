@@ -13,10 +13,10 @@
 
 一个为 Godot 4.4+ 设计的高度模块化、易扩展的核心系统框架
 
-[快速开始](#快速开始) •
+[快速开始](#-快速开始) •
 [文档](docs/) •
 [示例](examples/) •
-[贡献](CONTRIBUTING.md) •
+[贡献](docs/CONTRIBUTING.md) •
 [支持与帮助](#-支持与帮助)
 
 </div>
@@ -56,29 +56,29 @@
 extends Node
 
 func _ready():
-	# 通过 CoreSystem 单例访问各个管理器
-	CoreSystem.state_machine_manager  # 状态机管理器
-	CoreSystem.save_manager          # 存档管理器
-	CoreSystem.audio_manager         # 音频管理器
-	CoreSystem.input_manager         # 输入管理器
-	CoreSystem.logger               # 日志管理器
-	CoreSystem.resource_manager     # 资源管理器
-	CoreSystem.scene_manager        # 场景管理器
+ # 通过 CoreSystem 单例访问各个管理器
+ CoreSystem.state_machine_manager  # 状态机管理器
+ CoreSystem.save_manager          # 存档管理器
+ CoreSystem.audio_manager         # 音频管理器
+ CoreSystem.input_manager         # 输入管理器
+ CoreSystem.logger               # 日志管理器
+ CoreSystem.resource_manager     # 资源管理器
+ CoreSystem.scene_manager        # 场景管理器
 ```
 
 ## 📚 文档
 
 每个系统的详细文档：
 
-| 系统 | 说明 | 文档链接 |
-|------|------|----------|
+| 系统       | 说明               | 文档链接                                    |
+| ---------- | ------------------ | ------------------------------------------- |
 | 状态机系统 | 游戏状态管理与转换 | [查看文档](docs/state_machine_system_zh.md) |
 | 序列化系统 | 游戏存档与配置管理 | [查看文档](docs/serialization_system_zh.md) |
-| 音频系统 | 音效与音乐管理 | [查看文档](docs/audio_system_zh.md) |
-| 输入系统 | 输入控制与事件处理 | [查看文档](docs/input_system_zh.md) |
-| 日志系统 | 日志记录与调试 | [查看文档](docs/logger_system_zh.md) |
-| 资源系统 | 资源加载与管理 | [查看文档](docs/resource_system_zh.md) |
-| 场景系统 | 场景切换与管理 | [查看文档](docs/scene_system_zh.md) |
+| 音频系统   | 音效与音乐管理     | [查看文档](docs/audio_system_zh.md)         |
+| 输入系统   | 输入控制与事件处理 | [查看文档](docs/input_system_zh.md)         |
+| 日志系统   | 日志记录与调试     | [查看文档](docs/logger_system_zh.md)        |
+| 资源系统   | 资源加载与管理     | [查看文档](docs/resource_system_zh.md)      |
+| 场景系统   | 场景切换与管理     | [查看文档](docs/scene_system_zh.md)         |
 
 ## 🌟 示例项目
 
@@ -86,7 +86,7 @@ func _ready():
 
 ## 🤝 参与贡献
 
-我们欢迎各种形式的贡献！无论是新功能、bug修复，还是文档改进。详情请查看[贡献指南](CONTRIBUTING.md)。
+我们欢迎各种形式的贡献！无论是新功能、bug 修复，还是文档改进。详情请查看[贡献指南](CONTRIBUTING.md)。
 
 ## 📄 开源协议
 
@@ -97,7 +97,7 @@ func _ready():
 如果你遇到问题或有任何建议：
 
 1. 查看[详细文档](docs/)
-2. 搜索[已存在的issues](https://github.com/Liweimin0512/godot_core_system/issues)
+2. 搜索[已存在的 issues](https://github.com/Liweimin0512/godot_core_system/issues)
 3. 创建新的[issue](https://github.com/Liweimin0512/godot_core_system/issues/new)
 
 ### 社区交流
@@ -115,6 +115,6 @@ func _ready():
 ---
 
 <div align="center">
-	<strong>由 Liweimin0512 用 ❤️ 构建</strong><br>
-	<sub>让游戏开发变得更简单</sub>
+  <strong>由 Liweimin0512 用 ❤️ 构建</strong><br>
+  <sub>让游戏开发变得更简单</sub>
 </div>

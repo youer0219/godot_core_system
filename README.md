@@ -13,10 +13,10 @@
 
 A highly modular and extensible core system framework designed for Godot 4.4+
 
-[Getting Started](#getting-started) •
+[Getting Started](#-getting-started) •
 [Documentation](docs/) •
 [Examples](examples/) •
-[Contributing](CONTRIBUTING.md) •
+[Contributing](docs/CONTRIBUTING.md) •
 [Support and Help](#-support--help)
 
 </div>
@@ -70,15 +70,15 @@ func _ready():
 
 Detailed documentation for each system:
 
-| System | Description | Documentation |
-|--------|-------------|---------------|
+| System               | Description                           | Documentation                                |
+| -------------------- | ------------------------------------- | -------------------------------------------- |
 | State Machine System | Game state management and transitions | [View Docs](docs/state_machine_system_en.md) |
-| Serialization System | Game save and config management | [View Docs](docs/serialization_system_en.md) |
-| Audio System | Sound and music management | [View Docs](docs/audio_system_en.md) |
-| Input System | Input control and event handling | [View Docs](docs/input_system_en.md) |
-| Logger System | Logging and debugging | [View Docs](docs/logger_system_en.md) |
-| Resource System | Resource loading and management | [View Docs](docs/resource_system_en.md) |
-| Scene System | Scene switching and management | [View Docs](docs/scene_system_en.md) |
+| Serialization System | Game save and config management       | [View Docs](docs/serialization_system_en.md) |
+| Audio System         | Sound and music management            | [View Docs](docs/audio_system_en.md)         |
+| Input System         | Input control and event handling      | [View Docs](docs/input_system_en.md)         |
+| Logger System        | Logging and debugging                 | [View Docs](docs/logger_system_en.md)        |
+| Resource System      | Resource loading and management       | [View Docs](docs/resource_system_en.md)      |
+| Scene System         | Scene switching and management        | [View Docs](docs/scene_system_en.md)         |
 
 ## 🌟 Example Project
 
