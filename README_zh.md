@@ -111,7 +111,7 @@ func _ready():
 
 ### 社区交流
 
-- 加入我们的 [Discord 社区](https://discord.gg/6GFtSjfdF7)
+- 加入我们的 [Discord 社区](https://discord.gg/V5nuzC2BcJ)
 - 关注我们的 [itch.io](https://godot-li.itch.io/) 主页
 - 为项目点亮 ⭐ 以示支持！
 

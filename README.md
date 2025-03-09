@@ -110,7 +110,7 @@ If you encounter any issues or have suggestions:
 
 ### Community
 
-- Join our [Discord Community](https://discord.gg/s7cnrHWA)
+- Join our [Discord Community](https://discord.gg/V5nuzC2BcJ)
 - Follow us on [itch.io](https://godot-li.itch.io/)
 - Star ⭐ the project to show your support!
 
