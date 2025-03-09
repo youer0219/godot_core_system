@@ -51,7 +51,6 @@ func load_config(callback: Callable = Callable()) -> void:
 	_io_manager.read_file_async(
 		config_path,
 		true,
-		false,
 		"",
 		func(success: bool, result: Variant):
 			if success:
@@ -75,7 +74,6 @@ func save_config(callback: Callable = Callable()) -> void:
 		config_path,
 		_config,
 		true,
-		false,
 		"",
 		func(success: bool, _result: Variant):
 			if success:

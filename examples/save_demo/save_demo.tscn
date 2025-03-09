@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://riqfmggkqpfd"]
 
 [ext_resource type="Script" uid="uid://celnqj6udoy6d" path="res://addons/godot_core_system/examples/save_demo/save_demo.gd" id="1_y8g4f"]
-[ext_resource type="Script" uid="uid://bmogf1du5qa8r" path="res://addons/godot_core_system/source/serialization/serializable_component.gd" id="3_ccmci"]
+[ext_resource type="Script" path="res://addons/godot_core_system/source/serialization/serializable_component.gd" id="3_ccmci"]
 [ext_resource type="Script" uid="uid://ct0vfugiihnyr" path="res://addons/godot_core_system/examples/save_demo/player.gd" id="3_qar2a"]
 
 [node name="SaveDemo" type="Node2D"]
@@ -110,6 +110,11 @@ layout_mode = 2
 size_flags_vertical = 8
 alignment = 1
 
+[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "自动存档：？"
+
 [node name="CreateButton" type="Button" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons"]
 layout_mode = 2
 text = "创建存档"
@@ -122,13 +127,8 @@ text = "加载存档"
 layout_mode = 2
 text = "删除存档"
 
-[node name="AutoSaveToggle" type="CheckButton" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons"]
-layout_mode = 2
-text = "自动存档"
-
 [connection signal="deserialized" from="Player/SerializableComponent" to="." method="_on_serializable_component_deserialized"]
 [connection signal="serialized" from="Player/SerializableComponent" to="." method="_on_serializable_component_serialized"]
 [connection signal="pressed" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/CreateButton" to="." method="_on_create_button_pressed"]
 [connection signal="pressed" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/LoadButton" to="." method="_on_load_button_pressed"]
 [connection signal="pressed" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/DeleteButton" to="." method="_on_delete_button_pressed"]
-[connection signal="toggled" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/AutoSaveToggle" to="." method="_on_auto_save_toggled"]

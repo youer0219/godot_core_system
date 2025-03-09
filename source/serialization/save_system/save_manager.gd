@@ -105,8 +105,7 @@ func create_save(save_name: String, callback: Callable = func(_success: bool): p
 		save_path,
 		_current_save.serialize(),
 		true,
-		false,
-		"",
+		"12345",
 		func(success: bool, _result: Variant):
 			if success:
 				save_created.emit(save_name)
@@ -122,8 +121,7 @@ func load_save(save_name: String, callback: Callable = func(_success: bool): pas
 	_io_manager.read_file_async(
 		save_path,
 		true,
-		false,
-		"",
+		"12345",
 		func(success: bool, result: Variant):
 			if success:
 				_current_save = GameStateData.new()

@@ -45,6 +45,11 @@ grow_horizontal = 2
 grow_vertical = 0
 alignment = 1
 
+[node name="Label" type="Label" parent="UI/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "自动保存：是"
+
 [node name="ModifyButton" type="Button" parent="UI/Buttons"]
 layout_mode = 2
 text = "修改配置"

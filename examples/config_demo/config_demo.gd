@@ -5,6 +5,7 @@ const ConfigManager = CoreSystem.ConfigManager
 @onready var config_manager : ConfigManager = CoreSystem.config_manager
 @onready var status_label = $UI/StatusLabel
 @onready var config_tree = $UI/ConfigTree
+@onready var label: Label = %Label
 
 func _ready():
 	# 连接信号
@@ -21,6 +22,7 @@ func _ready():
 			status_label.text = "配置加载失败，使用默认配置"
 		_update_config_tree()
 	)
+	label.text = "自动保存：{0}".format(["是" if config_manager.auto_save else "否"])
 
 ## 更新配置显示
 func _update_config_tree():

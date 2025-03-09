@@ -9,6 +9,7 @@ const SaveManager = CoreSystem.SaveManager
 @onready var line_edit_name: LineEdit = %LineEditName
 @onready var line_edit_level: LineEdit = %LineEditLevel
 @onready var line_edit_exp: LineEdit = %LineEditExp
+@onready var label: Label = %Label
 
 
 func _ready():
@@ -25,6 +26,7 @@ func _ready():
 	# 更新存档列表
 	_update_save_list()
 	_update_player_display()
+	label.text = "自动存档：{0}".format(["是" if save_manager.auto_save_enabled else "否"])
 
 ## 更新存档列表
 func _update_save_list():
@@ -108,12 +110,6 @@ func _on_delete_button_pressed():
 	delete()
 
 
-## 切换自动存档按钮回调
-func _on_auto_save_toggled(button_pressed: bool):
-	ProjectSettings.set_setting("core_system/save_system/auto_save_enabled", button_pressed)
-	status_label.text = "自动存档已" + ("开启" if button_pressed else "关闭")
-
-
 ## 存档创建回调
 func _on_save_created(save_name: String):
 	print("存档已创建：", save_name)
@@ -134,11 +130,3 @@ func _on_save_deleted(save_name: String):
 func _on_auto_save_created():
 	status_label.text = "自动存档已创建"
 	_update_save_list()
-
-
-func _on_serializable_component_serialized(data: Dictionary) -> void:
-	pass # Replace with function body.
-
-
-func _on_serializable_component_deserialized(data: Dictionary) -> void:
-	pass # Replace with function body.

@@ -35,6 +35,18 @@ var _running: bool = true
 var _mutex: Mutex
 var _task_counter: int = 0  # 任务计数器
 
+## 加密提供者
+var encryption_provider: EncryptionProvider:
+	get:
+		if not _encryption_provider:
+			_encryption_provider = XOREncryptionProvider.new()
+		return _encryption_provider
+	set(value):
+		_encryption_provider = value
+
+## 内部加密提供者实例
+var _encryption_provider: EncryptionProvider = null
+
 func _init(_data:Dictionary = {}):
 	_semaphore = Semaphore.new()
 	_mutex = Mutex.new()
@@ -78,7 +90,7 @@ func delete_file(path: String, callback: Callable = func(_s, _r): pass) -> Strin
 ## [param callback] 回调函数，接收(success: bool, result: Variant)
 ## [return] 任务ID
 func read_file_advanced(path: String, use_compression: bool = false, callback: Callable = func(_s, _r): pass) -> String:
-	return read_file_async(path, use_compression, false, "", callback)
+	return read_file_async(path, use_compression,  "", callback)
 
 ## 异步写入文件（进阶版本）
 ## [param path] 文件路径
@@ -87,21 +99,19 @@ func read_file_advanced(path: String, use_compression: bool = false, callback: C
 ## [param callback] 回调函数，接收(success: bool, result: Variant)
 ## [return] 任务ID
 func write_file_advanced(path: String, data: Variant, use_compression: bool = false, callback: Callable = func(_s, _r): pass) -> String:
-	return write_file_async(path, data, use_compression, false, "", callback)
+	return write_file_async(path, data, use_compression,  "", callback)
 
 ### 完整API ###
 
 ## 异步读取文件（完整版本）
 ## [param path] 文件路径
 ## [param compression] 是否压缩
-## [param encryption] 是否加密
-## [param encryption_key] 加密密钥
+## [param encryption_key] 加密密钥，为空表示不加密
 ## [param callback] 回调函数
 ## [return] 任务ID
 func read_file_async(
 	path: String, 
 	compression: bool = false,
-	encryption: bool = false,
 	encryption_key: String = "",
 	callback: Callable = func(_s, _r): pass
 ) -> String:
@@ -112,7 +122,6 @@ func read_file_async(
 		path,
 		null,
 		compression,
-		encryption,
 		encryption_key,
 		callback
 	)
@@ -124,15 +133,13 @@ func read_file_async(
 ## [param path] 文件路径
 ## [param data] 数据
 ## [param compression] 是否压缩
-## [param encryption] 是否加密
-## [param encryption_key] 加密密钥
+## [param encryption_key] 加密密钥，为空表示不加密
 ## [param callback] 回调函数
 ## [return] 任务ID
 func write_file_async(
 	path: String, 
 	data: Variant,
 	compression: bool = false,
-	encryption: bool = false,
 	encryption_key: String = "",
 	callback: Callable = func(_s, _r): pass
 ) -> String:
@@ -143,7 +150,6 @@ func write_file_async(
 		path,
 		data,
 		compression,
-		encryption,
 		encryption_key,
 		callback
 	)
@@ -162,7 +168,6 @@ func delete_file_async(path: String, callback: Callable = func(_s, _r): pass) ->
 		TaskType.DELETE,
 		path,
 		null,
-		false,
 		false,
 		"",
 		callback
@@ -235,7 +240,7 @@ func _handle_write_task(task: IOTask) -> void:
 		call_deferred("_complete_task", task, false, null, "Failed to open file")
 		return
 	
-	var processed_data = _process_data_for_write(task.data, task.compression, task.encryption, task.encryption_key)
+	var processed_data = _process_data_for_write(task.data, task.compression, task.encryption_key)
 	if processed_data.is_empty():
 		file.close()
 		call_deferred("_complete_task", task, false, null, "Failed to process data")
@@ -263,7 +268,7 @@ func _handle_read_task(task: IOTask) -> void:
 	var content = file.get_buffer(file.get_length())
 	file.close()
 	
-	var processed_data = _process_data_for_read(content, task.compression, task.encryption, task.encryption_key)
+	var processed_data = _process_data_for_read(content, task.compression, task.encryption_key)
 	if processed_data == null:
 		call_deferred("_complete_task", task, false, null, "Failed to process data")
 		return
@@ -305,10 +310,9 @@ func _complete_task(task: IOTask, success: bool, result: Variant = null, error: 
 ## 处理数据（写入）
 ## [param data] 数据
 ## [param compression] 是否压缩
-## [param encryption] 是否加密
 ## [param encryption_key] 加密密钥
 ## [return] 处理后的数据
-func _process_data_for_write(data: Variant, compression: bool, encryption: bool, encryption_key: String) -> PackedByteArray:
+func _process_data_for_write(data: Variant, compression: bool, encryption_key: String = "") -> PackedByteArray:
 	# 将数据转换为JSON字符串
 	var json_str := JSON.stringify(data)
 	var byte_array := json_str.to_utf8_buffer()
@@ -318,8 +322,7 @@ func _process_data_for_write(data: Variant, compression: bool, encryption: bool,
 		byte_array = byte_array.compress(FileAccess.COMPRESSION_GZIP)
 	
 	# 加密
-	if encryption and encryption_key:
-		# 使用AES256加密
+	if not encryption_key.is_empty():
 		var key := encryption_key.sha256_buffer()
 		byte_array = _encrypt_data(byte_array, key)
 	
@@ -328,12 +331,11 @@ func _process_data_for_write(data: Variant, compression: bool, encryption: bool,
 ## 处理数据（读取）
 ## [param byte_array] 数据
 ## [param compression] 是否压缩
-## [param encryption] 是否加密
 ## [param encryption_key] 加密密钥
 ## [return] 处理后的数据
-func _process_data_for_read(byte_array: PackedByteArray, compression: bool, encryption: bool, encryption_key: String) -> Variant:
+func _process_data_for_read(byte_array: PackedByteArray, compression: bool, encryption_key: String = "") -> Variant:
 	# 解密
-	if encryption and encryption_key:
+	if not encryption_key.is_empty():
 		var key := encryption_key.sha256_buffer()
 		byte_array = _decrypt_data(byte_array, key)
 	
@@ -350,24 +352,23 @@ func _process_data_for_read(byte_array: PackedByteArray, compression: bool, encr
 	return null
 
 ## 加密数据
-## [param data] 数据
+## [param data] 要加密的数据
 ## [param key] 密钥
 ## [return] 加密后的数据
 func _encrypt_data(data: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
-	# 简单的XOR加密，实际项目中应使用更安全的加密方法
-	var encrypted := PackedByteArray()
-	encrypted.resize(data.size())
-	for i in range(data.size()):
-		encrypted[i] = data[i] ^ key[i % key.size()]
-	return encrypted
+	return encryption_provider.encrypt(data, key)
 
 ## 解密数据
-## [param data] 数据
+## [param data] 要解密的数据
 ## [param key] 密钥
 ## [return] 解密后的数据
 func _decrypt_data(data: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
-	# XOR解密
-	return _encrypt_data(data, key)  # XOR加密和解密使用相同的操作
+	return encryption_provider.decrypt(data, key)
+
+## 设置加密提供者
+## [param provider] 加密提供者实例
+func set_encryption_provider(provider: EncryptionProvider) -> void:
+	encryption_provider = provider
 
 ## 生成唯一的任务ID
 func _generate_task_id() -> String:
@@ -395,9 +396,7 @@ class IOTask:
 	var callback: Callable
 	## 压缩
 	var compression: bool
-	## 加密
-	var encryption: bool
-	## 加密密钥
+	## 加密密钥, 为空表示不加密
 	var encryption_key: String
 	
 	func _init(
@@ -406,7 +405,6 @@ class IOTask:
 		_path: String, 
 		_data: Variant = null,
 		_compression: bool = false,
-		_encryption: bool = false,
 		_encryption_key: String = "",
 		_callback: Callable = func(_s, _r): pass
 	) -> void:
@@ -416,6 +414,5 @@ class IOTask:
 		data = _data
 		status = TaskStatus.PENDING
 		compression = _compression
-		encryption = _encryption
 		encryption_key = _encryption_key
 		callback = _callback
