@@ -1,4 +1,4 @@
-extends "res://addons/godot_core_system/source/manager_base.gd"
+extends Node
 
 signal time_scale_changed(new_scale: float)
 signal timer_completed(timer_id: String)
