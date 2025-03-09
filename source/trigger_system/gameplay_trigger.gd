@@ -1,5 +1,5 @@
 extends Resource
-class_name Trigger
+class_name GameplayTrigger
 
 ## 触发器
 
@@ -61,7 +61,9 @@ func activate(initial_context : Dictionary = {}) -> void:
 			if trigger_event.is_empty():
 				CoreSystem.logger.warning("Trigger event is empty")
 			else:
-				_trigger_manager.register_trigger(trigger_event, self)
+				_trigger_manager.register_event_trigger(trigger_event, self)
+		TRIGGER_TYPE.PERIODIC:
+			_trigger_manager.register_periodic_trigger(self)
 
 	_context = initial_context
 
@@ -78,7 +80,9 @@ func deactivate() -> void:
 			if trigger_event.is_empty():
 				CoreSystem.logger.warning("Trigger event is empty")
 			else:
-				_trigger_manager.unregister_trigger(trigger_event, self)
+				_trigger_manager.unregister_event_trigger(trigger_event, self)
+		TRIGGER_TYPE.PERIODIC:
+			_trigger_manager.unregister_periodic_trigger(self)
 
 	_context.clear()
 

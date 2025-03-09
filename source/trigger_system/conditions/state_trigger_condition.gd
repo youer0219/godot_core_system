@@ -13,7 +13,8 @@ func _init(config : Dictionary = {}) -> void:
 	required_state = config.get("required_state", "")
 
 func evaluate(context: Dictionary) -> bool:
-	var entity = context.get("entity", null)
-	if not entity:
-		return false
-	return entity.get(state_name) == required_state
+	var p_state_name = context.get("state_name", "")
+	var p_state_value = context.get("state_value", "")
+	if state_name != p_state_name:
+		return true
+	return p_state_value == required_state

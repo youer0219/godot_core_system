@@ -1,41 +1,72 @@
 extends Node
 
+const SETTING_SCRIPT: Script = preload("res://addons/godot_core_system/setting.gd")
+const SETTING_TRIGGER_SYSTEM := SETTING_SCRIPT.SETTING_TRIGGER_SYSTEM
+const SETTING_SUBSCRIBE_EVENT_BUS := SETTING_TRIGGER_SYSTEM + "subscribe_event_bus"
+
 ## 触发器集
-@export_storage var _triggers : Dictionary[StringName, Array]
+@export_storage var _event_triggers : Dictionary[StringName, Array]	## 事件触发器
+@export_storage var _periodic_triggers : Array[GameplayTrigger]	## 周期触发器
 var _condition_types : Dictionary = {
 	"composite_trigger_condition": CompositeTriggerCondition,
 	"event_type_trigger_condition": EventTypeTriggerCondition,
 	"state_trigger_condition": StateTriggerCondition,
 }
 
-signal trigger_success(trigger: Trigger, context: Dictionary)
-signal trigger_failed(trigger: Trigger, context: Dictionary)
+var _event_bus : Node = CoreSystem.event_bus
+## 是否订阅事件总线的事件
+var subscribe_event_bus : bool = false:
+	get:
+		return ProjectSettings.get_setting(SETTING_SUBSCRIBE_EVENT_BUS, true)
+
+signal triggered(trigger: GameplayTrigger, context: Dictionary)
+
+
+func _process(delta: float) -> void:
+	for trigger : GameplayTrigger in _periodic_triggers:
+		trigger.update(delta)
+
 
 ## 触发
 func handle_event(trigger_type: StringName, context: Dictionary) -> void:
-	var triggers : Array = _triggers.get(trigger_type, [])
+	var triggers : Array = _event_triggers.get(trigger_type, [])
 	if triggers.is_empty():
 		return
-	for trigger : Trigger in triggers:
+	for trigger : GameplayTrigger in triggers:
 		trigger.execute(context)
 
 
 ## 添加触发器
-func register_trigger(trigger_type: StringName, trigger: Trigger) -> void:
-	trigger.trigger_success.connect(_on_trigger_success.bind(trigger))
-	trigger.trigger_failed.connect(_on_trigger_failed.bind(trigger))
-	if not _triggers.has(trigger_type):
-		_triggers[trigger_type] = []
-	_triggers[trigger_type].append(trigger)
+func register_event_trigger(trigger_type: StringName, trigger: GameplayTrigger) -> void:
+	trigger.triggered.connect(_on_trigger_triggered.bind(trigger))
+	if not _event_triggers.has(trigger_type):
+		if subscribe_event_bus:
+			# 这里可以订阅事件总线的事件
+			_event_bus.subscribe(trigger_type, _on_event_bus_trigger.bind(trigger_type))
+		_event_triggers[trigger_type] = []
+	_event_triggers[trigger_type].append(trigger)
 
 
 ## 移除触发器
-func unregister_trigger(trigger_type: StringName, trigger: Trigger) -> void:
-	trigger.trigger_success.disconnect(_on_trigger_success.bind(trigger))
-	trigger.trigger_failed.disconnect(_on_trigger_failed.bind(trigger))
-	var triggers : Array[Trigger] = _triggers.get(trigger_type, [])
+func unregister_event_trigger(trigger_type: StringName, trigger: GameplayTrigger) -> void:
+	trigger.triggered.disconnect(_on_trigger_triggered.bind(trigger))
+	var triggers : Array[GameplayTrigger] = _event_triggers.get(trigger_type, [])
 	if triggers.has(trigger):
 		triggers.erase(trigger)
+		if triggers.is_empty() and subscribe_event_bus:
+			# 这里可以取消订阅事件总线的事件
+			_event_bus.unsubscribe(trigger_type, _on_event_bus_trigger.bind(trigger_type))
+
+
+## 添加周期触发器
+func register_periodic_trigger(trigger: GameplayTrigger) -> void:
+	_periodic_triggers.append(trigger)
+
+
+## 移除周期触发器
+func unregister_periodic_trigger(trigger: GameplayTrigger) -> void:
+	_periodic_triggers.erase(trigger)
+
 
 ## 注册限制器类型
 ## [param type] 限制器类型
@@ -53,13 +84,14 @@ func unregister_condition_type(type: StringName) -> void:
 func create_condition(config: Dictionary) -> TriggerCondition:
 	var condition_type : StringName = config.get("type")
 	if not _condition_types.has(condition_type):
+		CoreSystem.logger.error("create condition by type: %s" % condition_type)
 		return null
 	return _condition_types[condition_type].new(config)
 
 
-func _on_trigger_success(context: Dictionary, trigger: Trigger) -> void:
-	trigger_success.emit(trigger, context)
+func _on_trigger_triggered(context: Dictionary, trigger: GameplayTrigger) -> void:
+	triggered.emit(trigger, context)
 
 
-func _on_trigger_failed(context: Dictionary, trigger: Trigger) -> void:
-	trigger_failed.emit(trigger, context)
+func _on_event_bus_trigger(context: Dictionary, trigger_type: StringName) -> void:
+	handle_event(trigger_type, context)
