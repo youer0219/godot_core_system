@@ -4,14 +4,15 @@ extends Node
 
 ## 存档数据
 const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
+const SETTING_SCRIPT: Script = preload("res://addons/godot_core_system/setting.gd")
+const SETTING_SAVE_SYSTEM := SETTING_SCRIPT.SETTING_SAVE_SYSTEM
 
 ## 项目设置路径常量
-const SETTING_SAVE_DIR = "core_system/save_system/save_directory"
-const SETTING_SAVE_EXT = "core_system/save_system/save_extension"
-const SETTING_AUTO_SAVE_INTERVAL = "core_system/save_system/auto_save_interval"
-const SETTING_MAX_AUTO_SAVES = "core_system/save_system/max_auto_saves"
-const SETTING_AUTO_SAVE_ENABLED = "core_system/save_system/auto_save_enabled"
-
+const SETTING_SAVE_DIR =  SETTING_SAVE_SYSTEM + "save_directory"
+const SETTING_SAVE_EXT = SETTING_SAVE_SYSTEM + "save_extension"
+const SETTING_AUTO_SAVE_INTERVAL = SETTING_SAVE_SYSTEM + "auto_save_interval"
+const SETTING_MAX_AUTO_SAVES = SETTING_SAVE_SYSTEM + "max_auto_saves"
+const SETTING_AUTO_SAVE_ENABLED = SETTING_SAVE_SYSTEM + "auto_save_enabled"
 
 ## 存档目录
 var save_directory: String:

@@ -4,6 +4,7 @@ extends RefCounted
 const SETTING_MODULE_ENABLE: String = "godot_core_system/module_enable/"
 const SETTING_SAVE_SYSTEM: String = "godot_core_system/save_system/"
 const SETTING_CONFIG_SYSTEM: String = "godot_core_system/config_system/"
+const SETTING_TRIGGER_SYSTEM: String = "godot_core_system/trigger_system/"
 
 const SETTING_INFO_DICT: Dictionary[StringName, Dictionary] = {
 	"module_enable/event_bus":
@@ -215,4 +216,14 @@ const SETTING_INFO_DICT: Dictionary[StringName, Dictionary] = {
 		"basic": true,
 		"default": true,
 	},
+
+	"trigger_system/subscribe_event_bus":
+	{
+		"name": SETTING_TRIGGER_SYSTEM + "subscribe_event_bus",
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": "",
+		"basic": true,
+		"default": true,
+	}
 }

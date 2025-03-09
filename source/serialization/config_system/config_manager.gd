@@ -10,10 +10,11 @@ signal config_saved
 ## 配置重置
 signal config_reset
 
-const SETTING_CONFIG_PATH: String = "godot_core_system/config_system/config_path"
-const SETTING_AUTO_SAVE: String = "godot_core_system/config_system/auto_save"
-
 const DefaultConfig = preload("res://addons/godot_core_system/source/serialization/config_system/default_config.gd")
+const SETTING_SCRIPT: Script = preload("res://addons/godot_core_system/setting.gd")
+const SETTING_SAVE_SYSTEM := SETTING_SCRIPT.SETTING_SAVE_SYSTEM
+const SETTING_CONFIG_PATH: String = SETTING_SAVE_SYSTEM + "config_path"
+const SETTING_AUTO_SAVE: String = SETTING_SAVE_SYSTEM + "auto_save"
 
 ## 配置文件路径
 @export var config_path: String:
