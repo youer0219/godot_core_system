@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://xxxxxxxxxxxx"]
 
 [ext_resource type="Script" uid="uid://2xc4842u5g2w" path="res://addons/godot_core_system/examples/tag_demo/tag_demo.gd" id="1_xxxxx"]
-[ext_resource type="Script" uid="uid://dpimc1tjaxslb" path="res://addons/godot_core_system/source/tag_system/gameplay_tag_container.gd" id="2_xxxxx"]
+[ext_resource type="Script" uid="uid://chb2sla2oueky" path="res://addons/godot_core_system/examples/tag_demo/tag_character.gd" id="2_ag2rl"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_zzzzz"]
 bg_color = Color(0.2, 0.2, 0.2, 1)
@@ -15,9 +15,7 @@ script = ExtResource("1_xxxxx")
 
 [node name="Player" type="Node2D" parent="."]
 position = Vector2(300, 300)
-
-[node name="TagContainer" type="Node" parent="Player"]
-script = ExtResource("2_xxxxx")
+script = ExtResource("2_ag2rl")
 
 [node name="ColorRect" type="ColorRect" parent="Player"]
 offset_left = -20.0
@@ -36,9 +34,7 @@ horizontal_alignment = 1
 
 [node name="Enemy" type="Node2D" parent="."]
 position = Vector2(500, 300)
-
-[node name="TagContainer" type="Node" parent="Enemy"]
-script = ExtResource("2_xxxxx")
+script = ExtResource("2_ag2rl")
 
 [node name="ColorRect" type="ColorRect" parent="Enemy"]
 offset_left = -20.0

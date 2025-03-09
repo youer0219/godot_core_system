@@ -1,5 +1,4 @@
-@tool
-extends Node
+extends Resource
 class_name GameplayTagContainer
 
 ## 标签列表

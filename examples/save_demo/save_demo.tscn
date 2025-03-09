@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://riqfmggkqpfd"]
 
 [ext_resource type="Script" uid="uid://celnqj6udoy6d" path="res://addons/godot_core_system/examples/save_demo/save_demo.gd" id="1_y8g4f"]
-[ext_resource type="Script" uid="uid://bmogf1du5qa8r" path="res://addons/godot_core_system/source/serialization/serializable_component.gd" id="3_ccmci"]
+[ext_resource type="Script" path="res://addons/godot_core_system/source/serialization/serializable_component.gd" id="3_ccmci"]
 [ext_resource type="Script" uid="uid://ct0vfugiihnyr" path="res://addons/godot_core_system/examples/save_demo/player.gd" id="3_qar2a"]
 
 [node name="SaveDemo" type="Node2D"]
