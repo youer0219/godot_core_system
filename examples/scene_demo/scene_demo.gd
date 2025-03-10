@@ -20,7 +20,6 @@ func _ready():
 	
 	# 连接信号
 	scene_manager.scene_loading_started.connect(_on_scene_loading_started)
-	scene_manager.scene_loading_progress.connect(_on_scene_loading_progress)
 	scene_manager.scene_changed.connect(_on_scene_changed)
 	scene_manager.scene_loading_finished.connect(_on_scene_loading_finished)
 	
@@ -54,10 +53,6 @@ func _on_scene3_pressed():
 func _on_scene_loading_started(scene_path: String):
 	status_label.text = "开始加载场景：" + scene_path
 	buttons.visible = false
-
-## 场景加载进度回调
-func _on_scene_loading_progress(progress: float):
-	status_label.text = "加载进度：%.1f%%" % (progress * 100)
 
 ## 场景切换回调
 func _on_scene_changed(_old_scene: Node, _new_scene: Node):
