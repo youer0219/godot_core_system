@@ -9,19 +9,8 @@ const SETTING_SCRIPT: Script = preload("res://addons/godot_core_system/setting.g
 const SETTING_INFO_DICT: Dictionary[StringName, Dictionary] = SETTING_SCRIPT.SETTING_INFO_DICT
 
 
-## 在项目运行前添加单例以避免脚本引用单例冲突
-func _build() -> bool:
-	add_autoload_singleton(SYSTEM_NAME, SYSTEM_PATH)
-	return true
-
-
-## 在项目运行时添加项目设置
+## 在插件运行时添加项目设置
 func _enter_tree() -> void:
-	_add_project_settings()
-
-
-## 在启用插件时进行初始化
-func _enable_plugin() -> void:
 	_add_project_settings()
 	add_autoload_singleton(SYSTEM_NAME, SYSTEM_PATH)
 	ProjectSettings.save()
