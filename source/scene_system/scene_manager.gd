@@ -22,7 +22,8 @@ enum TransitionEffect {
 	NONE,       ## 无转场效果
 	FADE,       ## 淡入淡出
 	SLIDE,      ## 滑动
-	DISSOLVE    ## 溶解
+	DISSOLVE,   ## 溶解
+	CUSTOM,      ## 自定义
 }
 
 # 属性
@@ -36,6 +37,8 @@ var _transition_rect: ColorRect
 var _scene_stack: Array[Dictionary] = []
 ## 是否正在切换场景
 var _is_switching: bool = false
+## 转场效果实例
+var _transitions: Dictionary = {}
 
 ## 资源管理器
 var _resource_manager : CoreSystem.ResourceManager:
@@ -58,6 +61,8 @@ func _ready() -> void:
 	_setup_transition_layer()
 	# 初始化当前场景
 	_current_scene = get_tree().current_scene
+	# 初始化默认转场效果
+	_setup_default_transitions()
 
 ## 预加载场景
 ## @param scene_path 场景路径
@@ -78,7 +83,9 @@ func change_scene_async(
 		push_to_stack: bool = false,
 		effect: TransitionEffect = TransitionEffect.NONE, 
 		duration: float = 0.5, 
-		callback: Callable = Callable()) -> void:
+		callback: Callable = Callable(),
+		custom_transition: BaseTransition = null
+		) -> void:
 	# 防止同时切换多个场景
 	if _is_switching:
 		_logger.warning("Scene switch already in progress, ignoring request to switch to: %s" % scene_path)
@@ -101,7 +108,7 @@ func change_scene_async(
 	if new_scene.has_method("init_state"):
 		new_scene.init_state(scene_data)
 	
-	await _do_scene_switch(new_scene, effect, duration, callback, push_to_stack)
+	await _do_scene_switch(new_scene, effect, duration, callback, custom_transition, push_to_stack)
 	await get_tree().process_frame
 	_is_switching = false
 
@@ -111,7 +118,9 @@ func change_scene_async(
 ## [param callback] 回调
 func pop_scene_async(effect: TransitionEffect = TransitionEffect.NONE, 
 					duration: float = 0.5, 
-					callback: Callable = Callable()) -> void:
+					callback: Callable = Callable(),
+					custom_transition: BaseTransition = null
+					) -> void:
 	if _scene_stack.is_empty():
 		return
 		
@@ -122,8 +131,8 @@ func pop_scene_async(effect: TransitionEffect = TransitionEffect.NONE,
 		prev_scene.restore_state(prev_scene_data.data)
 	_show_scene_recursive(prev_scene)
 	
-	await _do_scene_switch(prev_scene, effect, duration, callback)
-
+	await _do_scene_switch(prev_scene, effect, duration, callback, custom_transition)
+	
 ## 子场景管理
 ## [param parent_node] 父节点
 ## [param scene_path] 场景路径
@@ -150,66 +159,38 @@ func clear_preloaded_scenes() -> void:
 		_resource_manager.clear_resource_cache(scene_path)
 	_preloaded_scenes.clear()
 
+## 注册自定义转场效果
+## @param effect 转场效果类型
+## @param transition 转场效果实例
+func register_transition(effect: TransitionEffect, transition: BaseTransition) -> void:
+	if not transition:
+		return
+	transition.init(_transition_rect)
+	_transitions[effect] = transition
 
 ## 开始转场效果
 ## @param effect 转场效果
 ## @param duration 转场持续时间
-func _start_transition(effect: TransitionEffect, duration: float) -> void:
+func _start_transition(effect: TransitionEffect, duration: float, custom_transition: BaseTransition = null) -> void:
 	_transition_rect.visible = true
-	
-	match effect:
-		TransitionEffect.FADE:
-			# 淡入淡出
-			_transition_rect.position = Vector2.ZERO
-			var tween = create_tween()
-			tween.tween_property(_transition_rect, "color:a", 1.0, duration)
-			await tween.finished
-		
-		TransitionEffect.SLIDE:
-			# 滑动
-			_transition_rect.position = Vector2.ZERO
-			_transition_rect.color.a = 1.0
-			_transition_rect.position.x = -_transition_rect.size.x
-			var tween = create_tween()
-			tween.tween_property(_transition_rect, "position:x", 0, duration)
-			await tween.finished
-		
-		TransitionEffect.DISSOLVE:
-			# 溶解
-			_transition_rect.position = Vector2.ZERO
-			var tween = create_tween()
-			tween.tween_property(_transition_rect, "color:a", 1.0, duration)
-			await tween.finished
-
+	if effect == TransitionEffect.CUSTOM:
+		await custom_transition.start(duration)
+	elif effect in _transitions:
+		await _transitions[effect].start(duration)
+	else:
+		_logger.warning("Transition effect not found: %d" % effect)
 
 ## 结束转场效果
 ## @param effect 转场效果
 ## @param duration 转场持续时间
-func _end_transition(effect: TransitionEffect, duration: float) -> void:
-	match effect:
-		TransitionEffect.FADE:
-			## 淡出
-			var tween = create_tween()
-			tween.tween_property(_transition_rect, "color:a", 0.0, duration)
-			await tween.finished
-		
-		TransitionEffect.SLIDE:
-			## 滑动
-			var tween = create_tween()
-			tween.tween_property(_transition_rect, "position:x", _transition_rect.size.x, duration)
-			await tween.finished
-			_transition_rect.color.a = 0.0  # 重置透明度
-		
-		TransitionEffect.DISSOLVE:
-			## 溶解
-			var tween = create_tween()
-			tween.tween_property(_transition_rect, "color:a", 0.0, duration)
-			await tween.finished
-	
-	# 重置转场矩形状态
-	_transition_rect.position = Vector2.ZERO
+func _end_transition(effect: TransitionEffect, duration: float, custom_transition: BaseTransition = null) -> void:
+	if effect == TransitionEffect.CUSTOM:
+		await custom_transition.end(duration)
+	elif effect in _transitions:
+		await _transitions[effect].end(duration)
+	else:
+		_logger.warning("Transition effect not found: %d" % effect)
 	_transition_rect.visible = false
-
 
 ## 设置转场层
 func _setup_transition_layer() -> void:
@@ -226,28 +207,30 @@ func _setup_transition_layer() -> void:
 	root.size_changed.connect(_on_viewport_size_changed)
 	_on_viewport_size_changed()
 
+## 设置默认转场效果
+func _setup_default_transitions() -> void:
+	register_transition(TransitionEffect.FADE, FadeTransition.new())
+	register_transition(TransitionEffect.SLIDE, SlideTransition.new())
+	register_transition(TransitionEffect.DISSOLVE, DissolveTransition.new())
 
 ## 设置转场矩形大小
 func _on_viewport_size_changed():
 	if _transition_rect:
 		_transition_rect.size = get_viewport().get_visible_rect().size
 
-
 ## 递归隐藏场景
-## @param scene 要隐藏的场景
+## [param scene] 要隐藏的场景
 func _hide_scene_recursive(scene: Node) -> void:
 	scene.hide()
 	for child in scene.get_children():
 		_hide_scene_recursive(child)
 
-
 ## 递归显示场景
-## @param scene 要显示的场景
+## [param scene] 要显示的场景
 func _show_scene_recursive(scene: Node) -> void:
 	scene.show()
 	for child in scene.get_children():
 		_show_scene_recursive(child)
-
 
 ## 私有方法：执行场景切换
 ## [param new_scene] 新场景
@@ -259,12 +242,14 @@ func _do_scene_switch(
 		new_scene: Node, 
 		effect: TransitionEffect, 
 		duration: float, callback: Callable, 
-		save_current: bool = false) -> void:
+		custom_transition: BaseTransition = null,
+		save_current: bool = false
+		) -> void:
 	var old_scene : Node = _current_scene
 
 	# 开始转场效果
 	if effect != TransitionEffect.NONE:
-		await _start_transition(effect, duration)
+		await _start_transition(effect, duration, custom_transition)
 		
 	# 添加新场景
 	if not new_scene.get_parent():
@@ -286,7 +271,7 @@ func _do_scene_switch(
 	
 	# 结束转场效果
 	if effect != TransitionEffect.NONE:
-		await _end_transition(effect, duration)
+		await _end_transition(effect, duration, custom_transition)
 		
 	scene_changed.emit(old_scene, new_scene)
 
@@ -295,7 +280,6 @@ func _do_scene_switch(
 		callback.call()        
 	
 	scene_loading_finished.emit()
-
 
 ## 资源加载完成回调
 func _on_resource_loaded(path: String, resource: Resource) -> void:
