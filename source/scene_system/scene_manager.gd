@@ -129,8 +129,7 @@ func pop_scene_async(effect: TransitionEffect = TransitionEffect.NONE,
 	
 	if prev_scene.has_method("restore_state"):
 		prev_scene.restore_state(prev_scene_data.data)
-	_show_scene_recursive(prev_scene)
-	
+	prev_scene.show()
 	await _do_scene_switch(prev_scene, effect, duration, callback, custom_transition)
 	
 ## 子场景管理
@@ -218,20 +217,6 @@ func _on_viewport_size_changed():
 	if _transition_rect:
 		_transition_rect.size = get_viewport().get_visible_rect().size
 
-## 递归隐藏场景
-## [param scene] 要隐藏的场景
-func _hide_scene_recursive(scene: Node) -> void:
-	scene.hide()
-	for child in scene.get_children():
-		_hide_scene_recursive(child)
-
-## 递归显示场景
-## [param scene] 要显示的场景
-func _show_scene_recursive(scene: Node) -> void:
-	scene.show()
-	for child in scene.get_children():
-		_show_scene_recursive(child)
-
 ## 私有方法：执行场景切换
 ## [param new_scene] 新场景
 ## [param effect] 转场效果
@@ -262,7 +247,7 @@ func _do_scene_switch(
 			"scene": old_scene, 
 			"data": old_scene.save_state() if old_scene.has_method("save_state") else {},
 		})
-		_hide_scene_recursive(old_scene)  # 递归隐藏场景
+		old_scene.hide()
 	else:
 		# 如果不需要保存状态，则直接销毁当前场景
 		if old_scene:

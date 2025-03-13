@@ -80,8 +80,9 @@ func _on_scene_changed(_old_scene: Node, _new_scene: Node):
 
 ## 场景加载完成回调
 func _on_scene_loading_finished():
-	status_label.text = "加载完成"
-	buttons.visible = true
+	if scene_manager.get_current_scene() == self:
+		status_label.text = "加载完成"
+		buttons.visible = true
 
 ## 场景预加载完成回调
 func _on_scene_preloaded(scene_path: String):
