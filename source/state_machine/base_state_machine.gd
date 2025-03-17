@@ -158,3 +158,9 @@ func has_variable(key: StringName) -> bool:
 ## 获取当前状态名称
 func get_current_state_name() -> StringName:
 	return current_state.state_id if current_state else &""
+
+
+func _agent_setter(value: Object) -> void:
+	agent = value
+	for state in states.values():
+		state.agent = agent
