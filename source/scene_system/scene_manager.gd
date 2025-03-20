@@ -34,6 +34,12 @@ var _transition_layer: CanvasLayer
 ## 转场矩形
 var _transition_rect: ColorRect
 ## 场景栈
+## 每个元素的结构为:
+## {
+##   "scene": Node,           # 场景节点
+##   "scene_path": String,    # 场景路径
+##   "data": Dictionary       # 场景数据
+## }
 var _scene_stack: Array[Dictionary] = []
 ## 是否正在切换场景
 var _is_switching: bool = false
@@ -94,19 +100,39 @@ func change_scene_async(
 	_is_switching = true
 	scene_loading_started.emit(scene_path)
 	
-	# 加载新场景
-	var new_scene : Node = _resource_manager.get_instance(scene_path)
-	if not new_scene:
-		var scene_resource : PackedScene = _resource_manager.get_cached_resource(scene_path)
-		new_scene = scene_resource.instantiate()
+	# 检查场景栈中是否已存在该场景
+	var stack_index := -1
+	for i in _scene_stack.size():
+		if _scene_stack[i].scene_path == scene_path:
+			stack_index = i
+			break
 	
-	if not new_scene:
-		_logger.error("Failed to load scene: %s" % scene_path)
-		_is_switching = false
-		return
-	
-	if new_scene.has_method("init_state"):
-		new_scene.init_state(scene_data)
+	var new_scene : Node
+	if stack_index >= 0:
+		# 如果场景在栈中存在，重用该场景
+		var stack_data = _scene_stack[stack_index]
+		new_scene = stack_data.scene
+		# 更新场景数据
+		if new_scene.has_method("init_state"):
+			new_scene.init_state(scene_data)
+		# 从栈中移除该场景（因为它将成为当前场景）
+		_scene_stack.remove_at(stack_index)
+		new_scene.show()
+		new_scene.move_to_front()
+	else:
+		# 加载新场景
+		new_scene = _resource_manager.get_instance(scene_path)
+		if not new_scene:
+			var scene_resource : PackedScene = _resource_manager.get_cached_resource(scene_path)
+			new_scene = scene_resource.instantiate()
+		
+		if not new_scene:
+			_logger.error("Failed to load scene: %s" % scene_path)
+			_is_switching = false
+			return
+		
+		if new_scene.has_method("init_state"):
+			new_scene.init_state(scene_data)
 	
 	await _do_scene_switch(new_scene, effect, duration, callback, custom_transition, push_to_stack)
 	await get_tree().process_frame
@@ -226,7 +252,8 @@ func _on_viewport_size_changed():
 func _do_scene_switch(
 		new_scene: Node, 
 		effect: TransitionEffect, 
-		duration: float, callback: Callable, 
+		duration: float, 
+		callback: Callable, 
 		custom_transition: BaseTransition = null,
 		save_current: bool = false
 		) -> void:
@@ -244,7 +271,8 @@ func _do_scene_switch(
 	if save_current and old_scene:
 		# 保存当前场景到栈
 		_scene_stack.push_back({
-			"scene": old_scene, 
+			"scene": old_scene,
+			"scene_path": old_scene.scene_file_path,
 			"data": old_scene.save_state() if old_scene.has_method("save_state") else {},
 		})
 		old_scene.hide()
