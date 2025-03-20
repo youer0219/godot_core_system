@@ -38,11 +38,9 @@ func _reset_state() -> void:
 ## @param duration 转场持续时间
 func _do_start(_duration: float) -> void:
 	push_error("BaseTransition._do_start() not implemented!")
-	pass
 
 ## 执行结束转场
 ## 子类必须实现这个方法
 ## @param duration 转场持续时间
 func _do_end(_duration: float) -> void:
 	push_error("BaseTransition._do_end() not implemented!")
-	pass
