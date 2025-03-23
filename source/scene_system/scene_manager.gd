@@ -45,6 +45,8 @@ var _scene_stack: Array[Dictionary] = []
 var _is_switching: bool = false
 ## 转场效果实例
 var _transitions: Dictionary = {}
+## 自定义转场效果
+var _custom_transitions: Dictionary = {}
 
 ## 资源管理器
 var _resource_manager : CoreSystem.ResourceManager:
@@ -90,7 +92,7 @@ func change_scene_async(
 		effect: TransitionEffect = TransitionEffect.NONE, 
 		duration: float = 0.5, 
 		callback: Callable = Callable(),
-		custom_transition: BaseTransition = null
+		custom_transition_name: StringName = ""
 		) -> void:
 	# 防止同时切换多个场景
 	if _is_switching:
@@ -134,7 +136,7 @@ func change_scene_async(
 		if new_scene.has_method("init_state"):
 			new_scene.init_state(scene_data)
 	
-	await _do_scene_switch(new_scene, effect, duration, callback, custom_transition, push_to_stack)
+	await _do_scene_switch(new_scene, effect, duration, callback, custom_transition_name, push_to_stack)
 	await get_tree().process_frame
 	_is_switching = false
 
@@ -145,7 +147,7 @@ func change_scene_async(
 func pop_scene_async(effect: TransitionEffect = TransitionEffect.NONE, 
 					duration: float = 0.5, 
 					callback: Callable = Callable(),
-					custom_transition: BaseTransition = null
+					custom_transition_name: StringName = ""
 					) -> void:
 	if _scene_stack.is_empty():
 		return
@@ -156,7 +158,7 @@ func pop_scene_async(effect: TransitionEffect = TransitionEffect.NONE,
 	if prev_scene.has_method("restore_state"):
 		prev_scene.restore_state(prev_scene_data.data)
 	prev_scene.show()
-	await _do_scene_switch(prev_scene, effect, duration, callback, custom_transition)
+	await _do_scene_switch(prev_scene, effect, duration, callback, custom_transition_name)
 	
 ## 子场景管理
 ## [param parent_node] 父节点
@@ -187,61 +189,76 @@ func clear_preloaded_scenes() -> void:
 ## 注册自定义转场效果
 ## @param effect 转场效果类型
 ## @param transition 转场效果实例
-func register_transition(effect: TransitionEffect, transition: BaseTransition) -> void:
+func register_transition(effect: TransitionEffect, transition: BaseTransition, custom_name: StringName = "") -> void:
 	if not transition:
 		return
+	if effect == TransitionEffect.CUSTOM:
+		if custom_name.is_empty():
+			_logger.error("Custom transition name cannot be empty")
+		_custom_transitions[custom_name] = transition
+	else:
+		_transitions[effect] = transition
 	transition.init(_transition_rect)
-	_transitions[effect] = transition
 
 ## 开始转场效果
 ## @param effect 转场效果
 ## @param duration 转场持续时间
-func _start_transition(effect: TransitionEffect, duration: float, custom_transition: BaseTransition = null) -> void:
+func _start_transition(effect: TransitionEffect, duration: float, custom_transition_name: StringName = "") -> void:
 	_transition_rect.visible = true
-	if effect == TransitionEffect.CUSTOM:
-		await custom_transition.start(duration)
-	elif effect in _transitions:
-		await _transitions[effect].start(duration)
+	if effect == TransitionEffect.CUSTOM and custom_transition_name:
+		await _custom_transitions[custom_transition_name].start(duration)
 	else:
-		_logger.warning("Transition effect not found: %d" % effect)
+		if effect in _transitions:
+			await _transitions[effect].start(duration)
+		else:
+			_logger.warning("Transition effect not found: %d" % effect)
 
 ## 结束转场效果
 ## @param effect 转场效果
 ## @param duration 转场持续时间
-func _end_transition(effect: TransitionEffect, duration: float, custom_transition: BaseTransition = null) -> void:
-	if effect == TransitionEffect.CUSTOM:
-		await custom_transition.end(duration)
-	elif effect in _transitions:
-		await _transitions[effect].end(duration)
+func _end_transition(effect: TransitionEffect, duration: float, custom_transition_name: StringName = "") -> void:
+	if effect == TransitionEffect.CUSTOM and custom_transition_name:
+		await _custom_transitions[custom_transition_name].end(duration)
 	else:
-		_logger.warning("Transition effect not found: %d" % effect)
+		if effect in _transitions:
+			await _transitions[effect].end(duration)
+		else:
+			_logger.warning("Transition effect not found: %d" % effect)
+	_transition_rect.visible = false
+
+## 清理转场效果
+func _cleanup_transition(effect: TransitionEffect, custom_transition_name: StringName = "") -> void:
 	_transition_rect.visible = false
 
 ## 设置转场层
 func _setup_transition_layer() -> void:
 	_transition_layer = CanvasLayer.new()
-	_transition_layer.layer = 128
+	_transition_layer.layer = 128  # 确保在最上层
 	add_child(_transition_layer)
 	
 	_transition_rect = ColorRect.new()
-	_transition_rect.color = Color(0, 0, 0, 0)
+	_transition_rect.color = Color.BLACK
 	_transition_rect.visible = false
+	_transition_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE  # 忽略鼠标输入
 	_transition_layer.add_child(_transition_rect)
 	
 	var root : Window = get_tree().root
-	root.size_changed.connect(_on_viewport_size_changed)
+	if not root.size_changed.is_connected(_on_viewport_size_changed):
+		root.size_changed.connect(_on_viewport_size_changed)
 	_on_viewport_size_changed()
+
+## 设置转场矩形大小
+func _on_viewport_size_changed():
+	if _transition_rect:
+		var size = get_viewport().get_visible_rect().size
+		_transition_rect.size = size
+		_transition_rect.position = Vector2.ZERO  # 让转场效果自己处理位置
 
 ## 设置默认转场效果
 func _setup_default_transitions() -> void:
 	register_transition(TransitionEffect.FADE, FadeTransition.new())
 	register_transition(TransitionEffect.SLIDE, SlideTransition.new())
 	register_transition(TransitionEffect.DISSOLVE, DissolveTransition.new())
-
-## 设置转场矩形大小
-func _on_viewport_size_changed():
-	if _transition_rect:
-		_transition_rect.size = get_viewport().get_visible_rect().size
 
 ## 私有方法：执行场景切换
 ## [param new_scene] 新场景
@@ -254,14 +271,14 @@ func _do_scene_switch(
 		effect: TransitionEffect, 
 		duration: float, 
 		callback: Callable, 
-		custom_transition: BaseTransition = null,
+		custom_transition_name: StringName = "",
 		save_current: bool = false
 		) -> void:
 	var old_scene : Node = _current_scene
 
 	# 开始转场效果
 	if effect != TransitionEffect.NONE:
-		await _start_transition(effect, duration, custom_transition)
+		await _start_transition(effect, duration, custom_transition_name)
 		
 	# 添加新场景
 	if not new_scene.get_parent():
@@ -284,7 +301,8 @@ func _do_scene_switch(
 	
 	# 结束转场效果
 	if effect != TransitionEffect.NONE:
-		await _end_transition(effect, duration, custom_transition)
+		await _end_transition(effect, duration, custom_transition_name)
+		_cleanup_transition(effect, custom_transition_name)
 		
 	scene_changed.emit(old_scene, new_scene)
 
