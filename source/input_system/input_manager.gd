@@ -6,23 +6,30 @@ extends Node
 ## 多设备输入支持
 ## 网络同步的输入系统
 
+## 动作触发
 signal action_triggered(action_name: String, event: InputEvent)
+## 轴变化
 signal axis_changed(axis_name: String, value: Vector2)
+## 输入重映射
 signal input_remapped(action_name: String, events: Array[InputEvent])
 
+## 默认缓冲时间
 const DEFAULT_BUFFER_TIME = 0.15  # 150ms的输入缓冲时间
+## 输入配置-section
 const INPUT_CONFIG_SECTION = "input_bindings"
 
+## 虚拟动作
 var _virtual_actions: Dictionary = {}
+## 轴映射
 var _axis_mappings: Dictionary = {}
+## 动作状态
 var _action_states: Dictionary = {}
+## 输入缓冲
 var _input_buffers: Dictionary = {}  # 存储输入缓冲
-
-var _config_manager: Node
+## 配置管理器
+var _config_manager: Node = CoreSystem.config_manager
 
 func _ready() -> void:
-	_config_manager = CoreSystem.config_manager
-	
 	# 初始化所有已注册的输入动作状态
 	for action in InputMap.get_actions():
 		_action_states[action] = false
@@ -34,10 +41,16 @@ func _ready() -> void:
 	# 加载输入配置
 	_load_input_config()
 
-func _on_config_loaded() -> void:
-	_load_input_config()
+func _physics_process(_delta: float) -> void:
+	# 清理过期的输入缓冲
+	var current_time = Time.get_ticks_msec() / 1000.0
+	for action in _input_buffers.keys():
+		var buffers = _input_buffers[action] as Array
+		buffers = buffers.filter(func(buffer): 
+			return current_time - buffer.timestamp <= DEFAULT_BUFFER_TIME and not buffer.consumed
+		)
+		_input_buffers[action] = buffers
 
-## 输入事件处理
 func _input(event: InputEvent) -> void:
 	# 处理所有已注册的输入动作
 	for action in InputMap.get_actions():
@@ -55,26 +68,6 @@ func _input(event: InputEvent) -> void:
 
 	# 处理虚拟轴输入
 	_process_axis_input()
-
-func _physics_process(_delta: float) -> void:
-	# 清理过期的输入缓冲
-	var current_time = Time.get_ticks_msec() / 1000.0
-	for action in _input_buffers.keys():
-		var buffers = _input_buffers[action] as Array
-		buffers = buffers.filter(func(buffer): 
-			return current_time - buffer.timestamp <= DEFAULT_BUFFER_TIME and not buffer.consumed
-		)
-		_input_buffers[action] = buffers
-
-class InputBuffer:
-	var action_name: String
-	var timestamp: float
-	var consumed: bool
-	
-	func _init(action: String) -> void:
-		action_name = action
-		timestamp = Time.get_ticks_msec() / 1000.0
-		consumed = false
 
 ## 检查动作是否在缓冲时间内被按下
 ## [param action_name] 动作名称
@@ -204,3 +197,17 @@ func clear_virtual_inputs() -> void:
 	_virtual_actions.clear()
 	_axis_mappings.clear()
 	_action_states.clear()
+
+## 配置加载回调
+func _on_config_loaded() -> void:
+	_load_input_config()
+
+class InputBuffer:
+	var action_name: String
+	var timestamp: float
+	var consumed: bool
+	
+	func _init(action: String) -> void:
+		action_name = action
+		timestamp = Time.get_ticks_msec() / 1000.0
+		consumed = false
