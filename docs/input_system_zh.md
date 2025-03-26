@@ -199,3 +199,4 @@ func update_settings():
 # 重置为默认配置
 func reset_settings():
     input_manager.reset_to_default()
+```
