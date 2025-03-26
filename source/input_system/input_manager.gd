@@ -1,5 +1,4 @@
 extends Node
-class_name InputManager
 
 ## 动作触发信号
 signal action_triggered(action_name: String, event: InputEvent)
@@ -47,7 +46,13 @@ func _update_input_state(delta: float) -> void:
 	
 	# 更新轴状态
 	for axis_name in virtual_axis.get_registered_axes():
-		virtual_axis.update_axis(axis_name, self)
+		virtual_axis.update_axis(axis_name)
+	
+	# 更新所有动作的状态
+	for action in InputMap.get_actions():
+		var is_pressed = Input.is_action_pressed(action)
+		var strength = Input.get_action_strength(action)
+		input_state.update_action(action, is_pressed, strength)
 
 ## 处理动作输入
 ## [param event] 输入事件
