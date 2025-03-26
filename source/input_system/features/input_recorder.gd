@@ -29,8 +29,14 @@ class InputRecord:
 
 ## 是否正在记录
 var is_recording: bool = false
+## 是否正在回放
+var is_playing: bool = false
 ## 记录开始时间
 var record_start_time: float = 0.0
+## 回放开始时间
+var playback_start_time: float = 0.0
+## 当前回放索引
+var _current_playback_index: int = 0
 ## 输入记录列表
 var _records: Array[InputRecord] = []
 ## 最大记录数量
@@ -46,15 +52,34 @@ func start_recording() -> void:
 func stop_recording() -> void:
 	is_recording = false
 
+## 开始回放
+func start_playback() -> void:
+	if _records.is_empty():
+		return
+	
+	is_playing = true
+	playback_start_time = Time.get_ticks_msec() / 1000.0
+	_current_playback_index = 0
+	
+	# 计算时间偏移，使第一个记录立即播放
+	var time_offset = playback_start_time - _records[0].timestamp
+	
+	# 调整所有记录的时间戳
+	for record in _records:
+		record.timestamp += time_offset
+
+## 停止回放
+func stop_playback() -> void:
+	is_playing = false
+	_current_playback_index = 0
+
 ## 记录输入
-## [param action] 动作名称
-## [param pressed] 是否按下
-## [param strength] 输入强度
 func record_input(action: String, pressed: bool, strength: float = 1.0) -> void:
 	if not is_recording:
 		return
 	
-	_records.append(InputRecord.new(action, pressed, strength))
+	var record = InputRecord.new(action, pressed, strength)
+	_records.append(record)
 	
 	# 限制记录数量
 	if _records.size() > _max_records:
@@ -63,6 +88,9 @@ func record_input(action: String, pressed: bool, strength: float = 1.0) -> void:
 ## 清除记录
 func clear_records() -> void:
 	_records.clear()
+	is_recording = false
+	is_playing = false
+	_current_playback_index = 0
 	record_start_time = 0.0
 
 ## 设置最大记录数量
@@ -113,20 +141,95 @@ func get_last_record() -> Dictionary:
 		return {}
 	return _records[-1].to_dict()
 
+## 获取回放数据
+func get_playback_data(current_time: float) -> Dictionary:
+	if not is_playing or _records.is_empty() or _current_playback_index >= _records.size():
+		return {}
+	
+	var record = _records[_current_playback_index]
+	if record.timestamp <= current_time:
+		_current_playback_index += 1
+		return record.to_dict()
+	
+	return {}
+
+## 检查回放是否结束
+func is_playback_finished() -> bool:
+	return is_playing and _current_playback_index >= _records.size()
+
+## 获取记录的总时长
+func get_total_duration() -> float:
+	if _records.is_empty():
+		return 0.0
+	return _records[-1].timestamp - _records[0].timestamp
+
+## 获取当前回放进度（0.0 到 1.0）
+func get_playback_progress() -> float:
+	if _records.is_empty() or not is_playing:
+		return 0.0
+	
+	var total_duration = get_total_duration()
+	if total_duration <= 0:
+		return 0.0
+	
+	var current_time = Time.get_ticks_msec() / 1000.0
+	var elapsed_time = current_time - playback_start_time
+	return clamp(elapsed_time / total_duration, 0.0, 1.0)
+
+## 检查是否有记录数据
+func has_records() -> bool:
+	return not _records.is_empty()
+
+## 获取最后一条记录的时间戳
+func get_last_record_timestamp() -> float:
+	if _records.is_empty():
+		return 0.0
+	return _records[-1].timestamp
+
+## 获取当前回放的记录索引
+func get_current_playback_index() -> int:
+	return _current_playback_index
+
+## 重置回放状态
+func reset_playback() -> void:
+	is_playing = false
+	_current_playback_index = 0
+	playback_start_time = 0.0
+
+## 重置所有状态
+func reset() -> void:
+	clear_records()
+	reset_playback()
+	record_start_time = 0.0
+
 ## 保存记录到文件
 ## [param filepath] 文件路径
 ## [return] 是否保存成功
 func save_records_to_file(filepath: String) -> bool:
+	if _records.is_empty():
+		return false
+	
 	var file = FileAccess.open(filepath, FileAccess.WRITE)
 	if not file:
 		return false
 	
-	var data = {
-		"start_time": record_start_time,
-		"records": get_all_records()
+	# 保存记录数据
+	var save_data = {
+		"version": "1.0",
+		"record_start_time": record_start_time,
+		"records": []
 	}
 	
-	file.store_string(JSON.stringify(data))
+	for record in _records:
+		save_data.records.append({
+			"action": record.action,
+			"pressed": record.pressed,
+			"strength": record.strength,
+			"timestamp": record.timestamp
+		})
+	
+	var json_string = JSON.stringify(save_data)
+	file.store_string(json_string)
 	return true
 
 ## 从文件加载记录
@@ -137,25 +240,29 @@ func load_records_from_file(filepath: String) -> bool:
 	if not file:
 		return false
 	
+	var json_string = file.get_as_text()
 	var json = JSON.new()
-	var error = json.parse(file.get_as_text())
-	if error != OK:
+	var parse_result = json.parse(json_string)
+	if parse_result != OK:
 		return false
 	
-	var data = json.get_data()
-	if not data is Dictionary:
+	var save_data = json.get_data()
+	if not save_data is Dictionary or not save_data.has("records"):
 		return false
 	
-	record_start_time = data.get("start_time", 0.0)
+	# 清除现有记录
 	_records.clear()
+	record_start_time = save_data.get("record_start_time", 0.0)
 	
-	for record_data in data.get("records", []):
-		var record = InputRecord.new(
-			record_data.get("action", ""),
-			record_data.get("pressed", false),
-			record_data.get("strength", 1.0)
-		)
-		record.timestamp = record_data.get("timestamp", 0.0)
-		_records.append(record)
+	# 加载记录
+	for record_data in save_data.records:
+		if record_data is Dictionary:
+			var record = InputRecord.new(
+				record_data.get("action", ""),
+				record_data.get("pressed", false),
+				record_data.get("strength", 1.0)
+			)
+			record.timestamp = record_data.get("timestamp", 0.0)
+			_records.append(record)
 	
-	return true
+	return not _records.is_empty()
