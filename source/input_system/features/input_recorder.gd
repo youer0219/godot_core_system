@@ -1,110 +1,161 @@
-class_name InputRecorder
 extends RefCounted
+class_name InputRecorder
 
 ## 输入记录数据结构
 class InputRecord:
-	var timestamp: float  # 时间戳
-	var action: String    # 动作名称
-	var pressed: bool     # 是否按下
-	var strength: float   # 输入强度
+	## 动作名称
+	var action: String
+	## 是否按下
+	var pressed: bool
+	## 输入强度
+	var strength: float
+	## 记录时间
+	var timestamp: float
 	
-	func _init(p_action: String, p_pressed: bool, p_strength: float = 1.0) -> void:
-		timestamp = Time.get_ticks_msec() / 1000.0
+	func _init(p_action: String, p_pressed: bool, p_strength: float) -> void:
 		action = p_action
 		pressed = p_pressed
 		strength = p_strength
+		timestamp = Time.get_ticks_msec() / 1000.0
 	
+	## 转换为字典
 	func to_dict() -> Dictionary:
 		return {
-			"timestamp": timestamp,
 			"action": action,
 			"pressed": pressed,
-			"strength": strength
+			"strength": strength,
+			"timestamp": timestamp
 		}
-	
-	static func from_dict(data: Dictionary) -> InputRecord:
-		var record = InputRecord.new(data.action, data.pressed, data.strength)
-		record.timestamp = data.timestamp
-		return record
 
-## 记录列表
-var _records: Array[InputRecord] = []
 ## 是否正在记录
-var _is_recording: bool = false
+var is_recording: bool = false
 ## 记录开始时间
-var _start_time: float = 0.0
-## 要记录的动作列表
-var _recorded_actions: Array[String] = []
+var record_start_time: float = 0.0
+## 输入记录列表
+var _records: Array[InputRecord] = []
+## 最大记录数量
+var _max_records: int = 1000
 
 ## 开始记录
-## [param actions] 要记录的动作列表，如果为空则记录所有动作
-func start_recording(actions: Array[String] = []) -> void:
+func start_recording() -> void:
+	is_recording = true
+	record_start_time = Time.get_ticks_msec() / 1000.0
 	_records.clear()
-	_recorded_actions = actions
-	_start_time = Time.get_ticks_msec() / 1000.0
-	_is_recording = true
 
 ## 停止记录
 func stop_recording() -> void:
-	_is_recording = false
+	is_recording = false
 
-## 记录输入事件
+## 记录输入
 ## [param action] 动作名称
 ## [param pressed] 是否按下
 ## [param strength] 输入强度
 func record_input(action: String, pressed: bool, strength: float = 1.0) -> void:
-	if not _is_recording:
-		return
-	
-	if not _recorded_actions.is_empty() and not action in _recorded_actions:
+	if not is_recording:
 		return
 	
 	_records.append(InputRecord.new(action, pressed, strength))
+	
+	# 限制记录数量
+	if _records.size() > _max_records:
+		_records.pop_front()
 
 ## 清除记录
 func clear_records() -> void:
 	_records.clear()
-	_start_time = 0.0
+	record_start_time = 0.0
 
-## 获取记录数据
-## [return] 记录数据列表
-func get_records() -> Array:
-	return _records.map(func(record: InputRecord): return record.to_dict())
+## 设置最大记录数量
+## [param max_count] 最大记录数量
+func set_max_records(max_count: int) -> void:
+	_max_records = max_count
+	
+	# 如果当前记录数量超过新的最大值，移除多余的记录
+	while _records.size() > _max_records:
+		_records.pop_front()
 
-## 从数据加载记录
-## [param data] 记录数据列表
-func load_records(data: Array) -> void:
-	_records.clear()
-	for record_data in data:
-		_records.append(InputRecord.from_dict(record_data))
+## 获取记录数量
+## [return] 记录数量
+func get_record_count() -> int:
+	return _records.size()
 
 ## 获取记录时长
 ## [return] 记录时长（秒）
-func get_duration() -> float:
+func get_record_duration() -> float:
 	if _records.is_empty():
 		return 0.0
-	return _records[-1].timestamp - _start_time
+	return _records[-1].timestamp - record_start_time
 
-## 是否正在记录
-## [return] 是否正在记录
-func is_recording() -> bool:
-	return _is_recording
-
-## 获取指定时间点的输入状态
-## [param time] 时间点（相对于记录开始时间）
-## [return] 输入状态字典，key为动作名称，value为{pressed: bool, strength: float}
-func get_state_at_time(time: float) -> Dictionary:
-	var target_time = _start_time + time
-	var state = {}
-	
+## 获取指定时间范围内的记录
+## [param start_time] 开始时间（相对于记录开始时间）
+## [param end_time] 结束时间（相对于记录开始时间）
+## [return] 记录列表
+func get_records_in_timeframe(start_time: float, end_time: float) -> Array:
+	var result = []
 	for record in _records:
-		if record.timestamp > target_time:
-			break
-		
-		if not state.has(record.action):
-			state[record.action] = {"pressed": false, "strength": 0.0}
-		
-		state[record.action].pressed = record.pressed
-		state[record.action].strength = record.strength
+		var relative_time = record.timestamp - record_start_time
+		if relative_time >= start_time and relative_time <= end_time:
+			result.append(record.to_dict())
+	return result
+
+## 获取所有记录
+## [return] 所有记录列表
+func get_all_records() -> Array:
+	var records = []
+	for record in _records:
+		records.append(record.to_dict())
+	return records
+
+## 获取最后一条记录
+## [return] 最后一条记录字典，如果没有记录则返回空字典
+func get_last_record() -> Dictionary:
+	if _records.is_empty():
+		return {}
+	return _records[-1].to_dict()
+
+## 保存记录到文件
+## [param filepath] 文件路径
+## [return] 是否保存成功
+func save_records_to_file(filepath: String) -> bool:
+	var file = FileAccess.open(filepath, FileAccess.WRITE)
+	if not file:
+		return false
 	
-	return state
+	var data = {
+		"start_time": record_start_time,
+		"records": get_all_records()
+	}
+	
+	file.store_string(JSON.stringify(data))
+	return true
+
+## 从文件加载记录
+## [param filepath] 文件路径
+## [return] 是否加载成功
+func load_records_from_file(filepath: String) -> bool:
+	var file = FileAccess.open(filepath, FileAccess.READ)
+	if not file:
+		return false
+	
+	var json = JSON.new()
+	var error = json.parse(file.get_as_text())
+	if error != OK:
+		return false
+	
+	var data = json.get_data()
+	if not data is Dictionary:
+		return false
+	
+	record_start_time = data.get("start_time", 0.0)
+	_records.clear()
+	
+	for record_data in data.get("records", []):
+		var record = InputRecord.new(
+			record_data.get("action", ""),
+			record_data.get("pressed", false),
+			record_data.get("strength", 1.0)
+		)
+		record.timestamp = record_data.get("timestamp", 0.0)
+		_records.append(record)
+	
+	return true
