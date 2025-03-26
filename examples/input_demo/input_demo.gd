@@ -14,24 +14,12 @@ const ACTIONS = {
 
 # 默认输入映射
 const DEFAULT_MAPPINGS = {
-	"player_jump": [
-		{"type": "InputEventKey", "keycode": KEY_SPACE}
-	],
-	"player_attack": [
-		{"type": "InputEventKey", "keycode": KEY_J}
-	],
-	"ui_right": [
-		{"type": "InputEventKey", "keycode": KEY_D}
-	],
-	"ui_left": [
-		{"type": "InputEventKey", "keycode": KEY_A}
-	],
-	"ui_down": [
-		{"type": "InputEventKey", "keycode": KEY_S}
-	],
-	"ui_up": [
-		{"type": "InputEventKey", "keycode": KEY_W}
-	]
+	"player_jump": KEY_SPACE,
+	"player_attack": KEY_J,
+	"ui_right": KEY_D,
+	"ui_left": KEY_A,
+	"ui_down": KEY_S,
+	"ui_up": KEY_W
 }
 
 func _ready():
@@ -56,25 +44,33 @@ func setup_input_config() -> void:
 	for action in DEFAULT_MAPPINGS:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action)
-		input_manager.update_action_mapping(action, DEFAULT_MAPPINGS[action])
+			var event = InputEventKey.new()
+			event.keycode = DEFAULT_MAPPINGS[action]
+			InputMap.action_add_event(action, event)
+	
+	# 注册虚拟动作
+	var jump_event = InputEventKey.new()
+	jump_event.keycode = DEFAULT_MAPPINGS[ACTIONS.jump]
+	input_manager.register_virtual_action(ACTIONS.jump, [jump_event])
+	
+	var attack_event = InputEventKey.new()
+	attack_event.keycode = DEFAULT_MAPPINGS[ACTIONS.attack]
+	input_manager.register_virtual_action(ACTIONS.attack, [attack_event])
 	
 	# 注册移动轴
-	input_manager.update_axis_mapping(ACTIONS.movement, {
-		"positive_x": "ui_right",
-		"negative_x": "ui_left",
-		"positive_y": "ui_down",
-		"negative_y": "ui_up"
-	})
-	
-	# 设置默认输入设置
-	input_manager._config_adapter.set_deadzone(0.2)
-	input_manager._config_adapter.set_axis_sensitivity(1.0)
+	input_manager.register_axis(
+		ACTIONS.movement,  # 轴名称
+		"ui_right",       # 正X轴动作 - D
+		"ui_left",        # 负X轴动作 - A
+		"ui_down",        # 正Y轴动作 - S
+		"ui_up"          # 负Y轴动作 - W
+	)
 
 func _process(_delta):
 	# 更新玩家精灵的位置
 	var movement = input_manager.get_axis_value(ACTIONS.movement)
 	if movement != Vector2.ZERO:
-		var sensitivity = input_manager._config_adapter.get_axis_sensitivity()
+		var sensitivity = input_manager.get_axis_sensitivity()
 		player_sprite.position += movement * 5 * sensitivity
 
 ## 动作触发回调
@@ -113,27 +109,32 @@ func _show_action_status(text: String):
 func _on_remap_requested(action: String) -> void:
 	_show_action_status("请按下新的按键...")
 	var event = await get_next_input_event()
-	if event:
-		var event_data = input_manager.get_event_data(event)
-		input_manager.update_action_mapping(action, [event_data])
-		input_manager.save_config()
+	if event is InputEventKey:
+		# 更新输入映射
+		InputMap.action_erase_events(action)
+		InputMap.action_add_event(action, event)
+		
+		# 如果是虚拟动作，也更新虚拟动作
+		if action == ACTIONS.jump or action == ACTIONS.attack:
+			input_manager.register_virtual_action(action, [event])
+		
 		_show_action_status("按键已重映射！")
 
 ## 灵敏度变化回调
 func _on_sensitivity_changed(value: float) -> void:
-	input_manager._config_adapter.set_axis_sensitivity(value)
-	input_manager.save_config()
+	input_manager.set_axis_sensitivity(value)
 	_show_action_status("灵敏度已更新：" + str(value))
 
 ## 死区变化回调
 func _on_deadzone_changed(value: float) -> void:
-	input_manager._config_adapter.set_deadzone(value)
-	input_manager.save_config()
+	input_manager.set_axis_deadzone(value)
 	_show_action_status("死区已更新：" + str(value))
 
 ## 重置请求回调
 func _on_reset_requested() -> void:
-	input_manager.reset_to_default()
+	setup_input_config()
+	settings_ui.update_sensitivity(1.0)
+	settings_ui.update_deadzone(0.2)
 	_show_action_status("已重置为默认设置！")
 
 ## 获取下一个输入事件

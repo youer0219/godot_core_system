@@ -66,6 +66,7 @@ func _ready() -> void:
 func _physics_process(_delta: float) -> void:
 	# 清理过期的输入缓冲
 	_input_buffer.clean_expired_buffers()
+	_update_axis_state(_delta)
 
 func _input(event: InputEvent) -> void:
 	# 首先通过事件处理器处理事件
@@ -148,30 +149,81 @@ func remap_action(action_name: String, events: Array[InputEvent]) -> void:
 	# 发送信号
 	input_remapped.emit(action_name, events)
 
-## 注册虚拟轴
+## 注册轴
 ## [param axis_name] 轴名称
-## [param positive_action] 正向动作
-## [param negative_action] 负向动作
-## [param up_action] 上方动作（可选）
-## [param down_action] 下方动作（可选）
-func register_axis(
-		axis_name: String, 
-		positive_action: String, 
-		negative_action: String, 
-		up_action: String = "", 
-		down_action: String = "") -> void:
-	_virtual_axis.register_axis(axis_name, positive_action, negative_action, up_action, down_action)
+## [param positive_x] 正X轴动作名称
+## [param negative_x] 负X轴动作名称
+## [param positive_y] 正Y轴动作名称
+## [param negative_y] 负Y轴动作名称
+func register_axis(axis_name: String, positive_x: String, negative_x: String, 
+	positive_y: String, negative_y: String) -> void:
+	_virtual_axis.register_axis(axis_name, positive_x, negative_x, positive_y, negative_y)
 
-## 注销虚拟轴
+## 注销轴
 ## [param axis_name] 轴名称
 func unregister_axis(axis_name: String) -> void:
 	_virtual_axis.unregister_axis(axis_name)
 
-## 获取虚拟轴的值
+## 清除轴
+## [param axis_name] 轴名称，如果为空则清除所有轴
+func clear_axis(axis_name: String = "") -> void:
+	_virtual_axis.clear_axis(axis_name)
+
+## 获取轴值
 ## [param axis_name] 轴名称
-## [return] 轴的值
-func get_axis(axis_name: String) -> Vector2:
+## [return] 轴值
+func get_axis_value(axis_name: String) -> Vector2:
 	return _virtual_axis.get_axis(axis_name)
+
+## 获取轴映射
+## [param axis_name] 轴名称
+## [return] 轴映射数据
+func get_axis_mapping(axis_name: String) -> Dictionary:
+	return _virtual_axis.get_axis_mapping(axis_name)
+
+## 获取所有轴映射
+## [return] 所有轴映射数据
+func get_axis_mappings() -> Dictionary:
+	return _virtual_axis.get_axis_mappings()
+
+## 设置轴映射
+## [param axis_name] 轴名称
+## [param mapping] 轴映射数据
+func set_axis_mapping(axis_name: String, mapping: Dictionary) -> void:
+	_virtual_axis.set_axis_mapping(axis_name, mapping)
+
+## 获取轴灵敏度
+## [return] 轴灵敏度值
+func get_axis_sensitivity() -> float:
+	return _virtual_axis.get_sensitivity()
+
+## 设置轴灵敏度
+## [param value] 灵敏度值
+func set_axis_sensitivity(value: float) -> void:
+	_virtual_axis.set_sensitivity(value)
+
+## 获取轴死区
+## [return] 死区值
+func get_axis_deadzone() -> float:
+	return _virtual_axis.get_deadzone()
+
+## 设置轴死区
+## [param value] 死区值
+func set_axis_deadzone(value: float) -> void:
+	_virtual_axis.set_deadzone(value)
+
+## 更新轴状态
+## [param delta] 时间增量
+func _update_axis_state(delta: float) -> void:
+	for axis_name in _virtual_axis.get_registered_axes():
+		_virtual_axis.update_axis(axis_name, self)
+
+## 处理虚拟轴输入
+func _process_axis_input() -> void:
+	for axis_name in _virtual_axis.get_registered_axes():
+		var value = get_axis_value(axis_name)
+		if value != Vector2.ZERO:
+			axis_changed.emit(axis_name, value)
 
 ## 开始记录输入
 ## [param actions] 要记录的动作列表，如果为空则记录所有动作
@@ -403,13 +455,6 @@ func _load_input_config() -> void:
 				# 添加保存的映射
 				for event in events:
 					InputMap.action_add_event(action, event)
-
-## 处理虚拟轴输入
-func _process_axis_input() -> void:
-	for axis_name in _virtual_axis.get_axes():
-		var value = get_axis(axis_name)
-		if value != Vector2.ZERO:
-			axis_changed.emit(axis_name, value)
 
 ## 从配置创建输入事件
 ## [param event_data] 事件数据

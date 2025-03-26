@@ -69,14 +69,36 @@ class InputFilter:
 
 ## 按键重映射处理器
 class KeyRemapHandler extends InputEventHandler:
-	var _remap_dict: Dictionary = {}
+	## 重映射完成信号
+	signal remap_completed(action: String, event: InputEvent)
 	
-	func remap_key(from_key: int, to_key: int) -> void:
-		_remap_dict[from_key] = to_key
+	var _remapping_action: String = ""
+	var _is_remapping: bool = false
 	
+	## 开始重映射动作
+	## [param action] 要重映射的动作名称
+	func start_remap(action: String) -> void:
+		_remapping_action = action
+		_is_remapping = true
+	
+	## 取消重映射
+	func cancel_remap() -> void:
+		_remapping_action = ""
+		_is_remapping = false
+	
+	## 处理输入事件
+	## [param event] 输入事件
+	## [return] 是否继续处理事件
 	func process_event(event: InputEvent) -> bool:
-		if event is InputEventKey and _remap_dict.has(event.keycode):
-			event.keycode = _remap_dict[event.keycode]
+		if not _is_remapping:
+			return true
+		
+		if event.is_pressed():
+			remap_completed.emit(_remapping_action, event)
+			_is_remapping = false
+			_remapping_action = ""
+			return false
+		
 		return true
 
 ## 按键组合处理器
