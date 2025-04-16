@@ -46,11 +46,11 @@ func _test_basic_functionality() -> void:
 	assert(_random_pool.get_remaining_count() == 4, "删除后计数错误")
 	print("✓ 删除抽取后数量正确")
 	
-	## 测试批量删除
-	#var remove_count = _random_pool.remove_items(["invalid_item02", "invalid_item"])
-	#assert(remove_count == 0, "批量删除计数错误")
-	#assert(_random_pool.get_remaining_count() == 4, "删除后数量错误")
-	#print("✓ 批量删除功能正常")
+	# 测试批量删除
+	var remove_count = _random_pool.remove_items(["invalid_item02", "invalid_item"])
+	assert(remove_count == 0, "批量删除计数错误")
+	assert(_random_pool.get_remaining_count() == 4, "删除后数量错误")
+	print("✓ 批量删除功能正常")
 	
 	# 测试清空
 	_random_pool.clear()
@@ -133,10 +133,5 @@ func _test_dynamic_changes() -> void:
 	print("=== 动态测试完成 ===")
 
 # 创建测试池
-func _create_test_pool(items:Array) -> RefCounted:
-	var pool := preload("uid://bmhh1f08bk3d6").new()
-	if items == null:
-		return null
-	else:
-		pool.add_items(items)
-	return pool
+func _create_test_pool(items:Array) -> RefCounted: 
+	return CoreSystem.RandomPicker.new(items)
