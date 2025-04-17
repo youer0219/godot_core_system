@@ -40,26 +40,10 @@ func add_item(item_data: Variant, item_weight: float, rebuild: bool = true, chec
 ## [param items] 要添加的物品数组（支持多种格式）
 ## [return] 成功添加的数量
 func add_items(items: Array, rebuild: bool = true, check_repeat:bool= true) -> int:
+	var unified_items: Array[Dictionary] = convert_to_unified_format(items)
 	var success_count := 0
-	for item in items:
-		var data
-		var weight
-		if item is Array:
-			if item.size() < 2:
-				_logger.error("物品格式不合法！%s" % str(item))
-				continue
-			data = item[0]
-			weight = float(item[1])
-		elif item is Dictionary:
-			if not (item.has("data") and item.has("weight")):
-				_logger.error("物品格式错误，必须包含 data 和 weight 字段 %s" % str(item))
-				continue
-			data = item.data
-			weight = item.weight
-		else:
-			_logger.error("无效的物品格式 %s" % str(item))
-			continue
-		if add_item(data, weight, false, false):
+	for item in unified_items:
+		if add_item(item.data, item.weight, false, false):
 			success_count += 1
 	if check_repeat:
 		success_count += remove_duplicates()
@@ -116,39 +100,43 @@ func update_item_weight(item_data: Variant, new_weight: float, rebuild: bool = t
 ## [param rebuild] 是否在更新完成后重建别名表（默认true）
 ## [return] 成功更新的物品数量
 func update_items_weights(updates: Array, rebuild: bool = true) -> int:
+	var unified_updates: Array[Dictionary] = convert_to_unified_format(updates)
 	var success_count := 0
-	
-	# 解析更新项
-	for item in updates:
-		var item_data: Variant
-		var new_weight: float
-		
-		# 支持多种输入格式
-		if item is Array:
-			if item.size() < 2:
-				_logger.error("更新项格式错误：%s" % str(item))
-				continue
-			item_data = item[0]
-			new_weight = float(item[1])
-		elif item is Dictionary:
-			if not (item.has("data") and item.has("weight")):
-				_logger.error("更新项字典缺少必要字段：%s" % str(item))
-				continue
-			item_data = item["data"]
-			new_weight = float(item["weight"])
-		else:
-			_logger.error("无效的更新项格式：%s" % str(item))
-			continue
-		
-		# 查找并更新物品
-		if update_item_weight(item_data,new_weight,false):
+	for item in unified_updates:
+		if update_item_weight(item.data, item.weight, false):
 			success_count += 1
-
-	# 重建别名表
 	if rebuild and success_count > 0:
 		_build_alias_table()
-
 	return success_count
+
+## 获取单个物品的权重数据
+## [param item_data] 要查询的物品数据
+## [return] 该物品的权重，未找到返回-1
+func get_item_weight(item_data: Variant) -> float:
+	for item in _item_pool:
+		if item.data == item_data:
+			return item.weight
+	_logger.warning("要获取权重的物品不存在", {"item_data": item_data})
+	return -1.0
+
+## 获取多个物品的权重数据
+## [param item_datas] 要查询的物品数据数组
+## [return] 字典，键为存在的物品数据，值为对应权重（仅包含找到的项）
+func get_items_weights(item_datas: Array) -> Dictionary:
+	var target_set := {} # 创建哈希集合用于快速查找
+	for data in item_datas:
+		target_set[data] = true
+	var result := {}
+	# 单次遍历池数据
+	for item in _item_pool:
+		if target_set.has(item.data) and not result.has(item.data):
+			result[item.data] = item.weight
+			# 移除以避免重复处理
+			target_set.erase(item.data)
+	# 记录未找到项的警告（每个缺失项仅记录一次）
+	for missing in target_set:
+		_logger.warning("要获取权重的物品不存在", {"item_data": missing})
+	return result
 
 ## 获取随机物品
 ## [param should_remove] 是否在获取后移除该物品（默认false）
@@ -264,35 +252,6 @@ func has_item(item_data: Variant) -> bool:
 			return true
 	return false
 
-## 获取单个物品的权重数据
-## [param item_data] 要查询的物品数据
-## [return] 该物品的权重，未找到返回-1
-func get_item_weight(item_data: Variant) -> float:
-	for item in _item_pool:
-		if item.data == item_data:
-			return item.weight
-	_logger.warning("要获取权重的物品不存在", {"item_data": item_data})
-	return -1.0
-
-## 获取多个物品的权重数据
-## [param item_datas] 要查询的物品数据数组
-## [return] 字典，键为存在的物品数据，值为对应权重（仅包含找到的项）
-func get_items_weights(item_datas: Array) -> Dictionary:
-	var target_set := {} # 创建哈希集合用于快速查找
-	for data in item_datas:
-		target_set[data] = true
-	var result := {}
-	# 单次遍历池数据
-	for item in _item_pool:
-		if target_set.has(item.data) and not result.has(item.data):
-			result[item.data] = item.weight
-			# 移除以避免重复处理
-			target_set.erase(item.data)
-	# 记录未找到项的警告（每个缺失项仅记录一次）
-	for missing in target_set:
-		_logger.warning("要获取权重的物品不存在", {"item_data": missing})
-	return result
-
 ## 剔除池中所有重复的数据项，每个数据只保留第一个出现的实例
 ## 不会重新创建别名表和概率表
 ## [return] 被移除的重复项数量
@@ -310,3 +269,26 @@ func remove_duplicates() -> int:
 	if removed_count > 0:
 		_item_pool = unique_items
 	return removed_count
+
+static func convert_to_unified_format(items: Array) -> Array[Dictionary]:
+	var converted: Array[Dictionary] = []
+	for item in items:
+		var data: Variant
+		var weight: float
+		if item is Array:
+			if item.size() < 2:
+				push_error("Invalid array format: %s" % str(item))
+				continue
+			data = item[0]
+			weight = float(item[1])
+		elif item is Dictionary:
+			if not (item.has("data") and item.has("weight")):
+				push_error("Invalid dictionary format: %s" % str(item))
+				continue
+			data = item["data"]
+			weight = float(item["weight"])
+		else:
+			push_error("Unsupported item type: %s" % str(item))
+			continue
+		converted.append({"data": data, "weight": weight})
+	return converted
