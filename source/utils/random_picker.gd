@@ -39,7 +39,7 @@ func add_item(item_data: Variant, item_weight: float, rebuild: bool = true) -> b
 ## 批量添加随机项
 ## [param items] 要添加的物品数组（支持多种格式）
 ## [return] 成功添加的数量
-func add_items(items: Array) -> int:
+func add_items(items: Array, rebuild: bool = true) -> int:
 	var success_count := 0
 	for item in items:
 		var data
@@ -61,7 +61,7 @@ func add_items(items: Array) -> int:
 			continue
 		if add_item(data, weight, false):
 			success_count += 1
-	if success_count > 0:
+	if success_count > 0 and rebuild:
 		_build_alias_table()
 	return success_count
 
@@ -82,12 +82,12 @@ func remove_item(item_data: Variant, rebuild: bool = true) -> bool:
 ## 批量删除指定物品
 ## [param item_datas] 要删除的物品数据数组
 ## [return] 成功删除的数量
-func remove_items(item_datas: Array) -> int:
+func remove_items(item_datas: Array, rebuild: bool = true) -> int:
 	var success_count := 0
 	for data in item_datas:
 		if remove_item(data, false):
 			success_count += 1
-	if success_count > 0:
+	if success_count > 0 and rebuild:
 		_build_alias_table()
 	return success_count
 
@@ -116,6 +116,11 @@ func get_random_item(should_remove: bool = false) -> Variant:
 
 	item_picked.emit(selected_item.data)
 	return selected_item.data
+
+## 重建别名表和概率表 
+## 给予开发者更多自由，避免一个原子操作中被迫多次构建别名表和概率表
+func rebuild_alias_table()->void:
+	_build_alias_table()
 
 ## 清空物品池
 func clear() -> void:
