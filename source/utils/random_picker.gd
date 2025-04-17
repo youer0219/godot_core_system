@@ -23,13 +23,13 @@ func _init(items: Array = []) -> void:
 ## [param item_weight] 物品权重值（必须为正数）
 ## [param rebuild] 是否立即重建别名表（默认true）
 ## [return] 是否添加成功
-func add_item(item_data: Variant, item_weight: float, rebuild: bool = true) -> bool:
+func add_item(item_data: Variant, item_weight: float, rebuild: bool = true, check_repeat:bool= true) -> bool:
 	if item_weight <= 0:
 		_logger.error("道具权重必须为正数 %s" % str(item_data))
 		return false
-	for item in _item_pool:
-		if item.data == item_data:
-			_logger.warning("%s物品已经存在，添加失败！" % str(item_data))
+	if check_repeat:
+		if has_item(item_data):
+			_logger.warning("要添加的物品已存在，无法添加", {"item_data": item_data})
 			return false
 	_item_pool.append({"data": item_data, "weight": item_weight})
 	if rebuild:
@@ -39,7 +39,7 @@ func add_item(item_data: Variant, item_weight: float, rebuild: bool = true) -> b
 ## 批量添加随机项
 ## [param items] 要添加的物品数组（支持多种格式）
 ## [return] 成功添加的数量
-func add_items(items: Array, rebuild: bool = true) -> int:
+func add_items(items: Array, rebuild: bool = true, check_repeat:bool= true) -> int:
 	var success_count := 0
 	for item in items:
 		var data
@@ -59,8 +59,10 @@ func add_items(items: Array, rebuild: bool = true) -> int:
 		else:
 			_logger.error("无效的物品格式 %s" % str(item))
 			continue
-		if add_item(data, weight, false):
+		if add_item(data, weight, false, false):
 			success_count += 1
+	if check_repeat:
+		success_count += remove_duplicates()
 	if success_count > 0 and rebuild:
 		_build_alias_table()
 	return success_count
@@ -204,3 +206,50 @@ func has_item(item_data: Variant) -> bool:
 		if item.data == item_data:
 			return true
 	return false
+
+## 获取单个物品的权重数据
+## [param item_data] 要查询的物品数据
+## [return] 该物品的权重，未找到返回-1
+func get_item_weight(item_data: Variant) -> float:
+	for item in _item_pool:
+		if item.data == item_data:
+			return item.weight
+	_logger.warning("要获取权重的物品不存在", {"item_data": item_data})
+	return -1.0
+
+## 获取多个物品的权重数据
+## [param item_datas] 要查询的物品数据数组
+## [return] 字典，键为存在的物品数据，值为对应权重（仅包含找到的项）
+func get_items_weights(item_datas: Array) -> Dictionary:
+	var target_set := {} # 创建哈希集合用于快速查找
+	for data in item_datas:
+		target_set[data] = true
+	var result := {}
+	# 单次遍历池数据
+	for item in _item_pool:
+		if target_set.has(item.data) and not result.has(item.data):
+			result[item.data] = item.weight
+			# 移除以避免重复处理
+			target_set.erase(item.data)
+	# 记录未找到项的警告（每个缺失项仅记录一次）
+	for missing in target_set:
+		_logger.warning("要获取权重的物品不存在", {"item_data": missing})
+	return result
+
+## 剔除池中所有重复的数据项，每个数据只保留第一个出现的实例
+## 不会重新创建别名表和概率表
+## [return] 被移除的重复项数量
+func remove_duplicates() -> int:
+	var seen := {}
+	var unique_items: Array[Dictionary] = []
+	var removed_count := 0
+	for item in _item_pool:
+		var data = item.data
+		if not seen.has(data):
+			seen[data] = true
+			unique_items.append(item)
+		else:
+			removed_count += 1
+	if removed_count > 0:
+		_item_pool = unique_items
+	return removed_count
