@@ -13,10 +13,10 @@ signal pool_emptied
 
 ## 初始化物品池
 ## [param items] 初始物品数组，格式支持Array或Dictionary
-func _init(items: Array = []) -> void:
+func _init(items: Array = [],check_repeat:bool = true) -> void:
 	if items.is_empty():
 		return
-	add_items(items)
+	add_items(items,true,check_repeat)
 
 ## 添加单个随机项
 ## [param item_data] 要添加的物品数据
