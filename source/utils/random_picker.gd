@@ -61,7 +61,8 @@ func add_items(items: Array) -> int:
 			continue
 		if add_item(data, weight, false):
 			success_count += 1
-	_build_alias_table()
+	if success_count > 0:
+		_build_alias_table()
 	return success_count
 
 ## 删除单个指定项
