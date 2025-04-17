@@ -93,6 +93,63 @@ func remove_items(item_datas: Array, rebuild: bool = true) -> int:
 		_build_alias_table()
 	return success_count
 
+## 更新指定物品的权重
+## [param item_data] 要更新的物品数据
+## [param new_weight] 新权重值（必须为正数）
+## [param rebuild] 是否立即重建别名表（默认true）
+## [return] 是否更新成功
+func update_item_weight(item_data: Variant, new_weight: float, rebuild: bool = true) -> bool:
+	if new_weight <= 0:
+		_logger.error("权重必须为正数：%s" % str(item_data))
+		return false
+	for i in range(_item_pool.size()):
+		if _item_pool[i].data == item_data:
+			_item_pool[i].weight = new_weight
+			if rebuild:
+				_build_alias_table()
+			return true
+	_logger.warning("要更新的物品不存在：%s" % str(item_data))
+	return false
+
+## 批量更新物品权重
+## [param updates] 要更新的项数组
+## [param rebuild] 是否在更新完成后重建别名表（默认true）
+## [return] 成功更新的物品数量
+func update_items_weights(updates: Array, rebuild: bool = true) -> int:
+	var success_count := 0
+	
+	# 解析更新项
+	for item in updates:
+		var item_data: Variant
+		var new_weight: float
+		
+		# 支持多种输入格式
+		if item is Array:
+			if item.size() < 2:
+				_logger.error("更新项格式错误：%s" % str(item))
+				continue
+			item_data = item[0]
+			new_weight = float(item[1])
+		elif item is Dictionary:
+			if not (item.has("data") and item.has("weight")):
+				_logger.error("更新项字典缺少必要字段：%s" % str(item))
+				continue
+			item_data = item["data"]
+			new_weight = float(item["weight"])
+		else:
+			_logger.error("无效的更新项格式：%s" % str(item))
+			continue
+		
+		# 查找并更新物品
+		if update_item_weight(item_data,new_weight,false):
+			success_count += 1
+
+	# 重建别名表
+	if rebuild and success_count > 0:
+		_build_alias_table()
+
+	return success_count
+
 ## 获取随机物品
 ## [param should_remove] 是否在获取后移除该物品（默认false）
 ## [return] 随机物品数据（池为空时返回null）

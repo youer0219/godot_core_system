@@ -85,7 +85,24 @@ func _test_basic_functionality() -> void:
 		var expected = expected_ratio[item]
 		assert(abs(actual - expected) < 0.02, "权重分布异常: %s" % item)
 	print("✓ 权重分布合理")
-	
+
+	_random_pool.update_item_weight("potion", 20.0)
+	assert(_random_pool.get_item_weight("potion") == 20.0, "权重更新失败")
+	print("✓ 权重更新功能正常")
+
+	# 新增批量更新测试（混合格式）
+	print("-- 批量权重更新测试 --")
+	var update_data := [
+		["sword", 20.0],          # 数组格式
+		{"data": "potion", "weight": 25.0},  # 字典格式
+		["invalid_item", 5.0]     # 不存在项
+	]
+	var updated_count = _random_pool.update_items_weights(update_data)
+	assert(updated_count == 2, "批量更新计数错误（预期2，实际%d）" % updated_count)
+	assert(_random_pool.get_item_weight("sword") == 20.0, "sword权重更新失败")
+	assert(_random_pool.get_item_weight("potion") == 25.0, "potion权重更新失败")
+	print("✓ 批量权重更新格式兼容性验证通过")
+
 	print("=== 基础测试通过 ===")
 
 var picked_count := 0
