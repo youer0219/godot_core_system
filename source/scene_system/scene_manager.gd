@@ -10,10 +10,10 @@ extends Node
 # 信号
 ## 开始加载场景
 signal scene_loading_started(scene_path: String)
-## 场景切换
-signal scene_changed(old_scene: Node, new_scene: Node)
 ## 结束加载场景
 signal scene_loading_finished()
+## 场景切换
+signal scene_changed(old_scene: Node, new_scene: Node)
 ## 场景预加载完成
 signal scene_preloaded(scene_path: String)
 
@@ -68,8 +68,9 @@ func _ready() -> void:
 	# 连接资源加载完成信号
 	if not _resource_manager.resource_loaded.is_connected(_on_resource_loaded):
 		_resource_manager.resource_loaded.connect(_on_resource_loaded)
-	# 初始化默认转场遮罩
-	_setup_transition_layer()
+	if not _transition_rect:
+		# 初始化默认转场遮罩
+		_setup_transition_layer()
 	# 初始化默认转场效果
 	_setup_default_transitions()
 
@@ -125,9 +126,6 @@ func change_scene_async(
 		# 如果场景在栈中存在，重用该场景
 		var stack_data = _scene_stack[stack_index]
 		new_scene = stack_data.scene
-		# 更新场景数据
-		if new_scene.has_method("init_state"):
-			new_scene.init_state(scene_data)
 		# 从栈中移除该场景（因为它将成为当前场景）
 		_scene_stack.remove_at(stack_index)
 		new_scene.move_to_front()
@@ -142,11 +140,7 @@ func change_scene_async(
 			_logger.error("Failed to load scene: %s" % scene_path)
 			_is_switching = false
 			return
-
-		if new_scene.has_method("init_state"):
-			new_scene.init_state(scene_data)
-
-	await _do_scene_switch(new_scene, effect, duration, callback, custom_transition_name, push_to_stack)
+	await _do_scene_switch(new_scene, effect, duration, callback, custom_transition_name, push_to_stack, scene_data)
 	await get_tree().process_frame
 	_is_switching = false
 
@@ -215,6 +209,8 @@ func register_transition(effect: TransitionEffect, transition: BaseTransition, c
 		_custom_transitions[custom_name] = transition
 	else:
 		_transitions[effect] = transition
+	if not _transition_rect:
+		_setup_transition_layer()
 	transition.init(_transition_rect)
 
 ## 开始转场效果
@@ -289,7 +285,8 @@ func _do_scene_switch(
 		duration: float,
 		callback: Callable,
 		custom_transition_name: StringName = "",
-		save_current: bool = false
+		save_current: bool = false,
+		scene_data: Dictionary = {}
 		) -> void:
 	var old_scene: Node = _current_scene
 
@@ -313,8 +310,22 @@ func _do_scene_switch(
 	else:
 		# 如果不需要保存状态，则直接销毁当前场景
 		if old_scene:
-			old_scene.get_parent().remove_child(old_scene)
+			#old_scene.get_parent().call_deferred("remove_child", old_scene)
+			# old_scene.get_parent().remove_child(old_scene)
 			old_scene.queue_free()
+
+	if not scene_data.is_empty():
+		if new_scene.has_method("init_state"):
+			new_scene.init_state(scene_data)
+		else:
+			CoreSystem.logger.warning("Scene %s does not have an init_state method" % new_scene.get_name())
+	
+	await get_tree().process_frame
+	scene_changed.emit(old_scene, new_scene)
+
+	# 回调
+	if callback.is_valid():
+		callback.call()
 
 	# 结束转场效果
 	if effect != TransitionEffect.NONE:
@@ -323,13 +334,6 @@ func _do_scene_switch(
 
 	## 场景切换后强制更新新场景的相机
 	call_deferred("_update_new_scene_camera",new_scene)
-
-	scene_changed.emit(old_scene, new_scene)
-
-	# 回调
-	if callback.is_valid():
-		callback.call()
-
 	scene_loading_finished.emit()
 
 ## 资源加载完成回调
